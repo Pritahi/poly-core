@@ -7,8 +7,10 @@ import logging
 import os
 import secrets
 import time
+import urllib.parse
 
 import bcrypt
+import jwt
 import psycopg2
 import psycopg2.extras
 from contextlib import asynccontextmanager
@@ -60,6 +62,12 @@ app.add_middleware(
 
 base_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
+SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
+SITE_URL = os.environ.get("SITE_URL", "")
+ALLOWED_ADMIN_EMAILS = os.environ.get("ALLOWED_ADMIN_EMAILS", "").split(",") if os.environ.get("ALLOWED_ADMIN_EMAILS") else []
+
 
 # ===================== AUTH HELPERS =====================
 
@@ -81,23 +89,44 @@ def verify_api_key(x_poly_api_key: Optional[str] = Header(None)):
 
 
 def _get_admin_session(request: Request):
+    """Verify admin session — supports both JWT (Google) and legacy tokens."""
     token = request.cookies.get("poly_admin_token")
     if not token:
         return None
-    # Verify token is valid hex (signed token, not raw ID)
+    # Try JWT verification (Supabase Google Auth)
+    if SUPABASE_JWT_SECRET and token.count(".") == 2:
+        try:
+            payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
+            email = payload.get("email", "")
+            # If allowed emails set, check access
+            if ALLOWED_ADMIN_EMAILS and email not in ALLOWED_ADMIN_EMAILS:
+                logger.warning(f"Google auth rejected for: {email}")
+                return None
+            meta = payload.get("user_metadata") or {}
+            return {
+                "username": meta.get("full_name") or email.split("@")[0],
+                "role": "admin",
+                "email": email,
+                "avatar": meta.get("avatar_url", ""),
+                "auth_provider": "google",
+            }
+        except jwt.ExpiredSignatureError:
+            logger.warning("JWT token expired")
+            return None
+        except Exception:
+            pass
+    # Fallback: legacy hex token verification
     try:
-        int(token, 16)  # Must be valid hex
-    except ValueError:
-        return None
-    # For now, accept any valid session token (in production, store token->user mapping)
-    try:
-        with _get_db() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as c:
-                c.execute("SELECT username, role FROM admin_users LIMIT 1")
-                row = c.fetchone()
-        return dict(row) if row else None
+        int(token, 16)
+        if len(token) >= 32:
+            with _get_db() as conn:
+                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as c:
+                    c.execute("SELECT username, role FROM admin_users LIMIT 1")
+                    row = c.fetchone()
+            return dict(row) if row else None
     except Exception:
-        return None
+        pass
+    return None
 
 
 def require_admin(request: Request):
@@ -162,7 +191,77 @@ class UserUpdate(BaseModel):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "version": "2.1.0", "service": "poly-core"}
+    return {"status": "ok", "version": "2.1.0", "service": "poly-core", "auth": "supabase-google" if SUPABASE_URL else "legacy"}
+
+
+# ===================== SUPABASE GOOGLE AUTH =====================
+
+@app.get("/api/auth/google")
+def google_login():
+    """Redirect to Supabase Google OAuth."""
+    if not SUPABASE_URL:
+        raise HTTPException(status_code=501, detail="Google Sign-In not configured. Set SUPABASE_URL env var.")
+    redirect_to = urllib.parse.quote(f"{SITE_URL}/api/auth/callback")
+    auth_url = f"{SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to={redirect_to}"
+    logger.info("Redirecting to Google OAuth")
+    return RedirectResponse(url=auth_url)
+
+
+@app.get("/api/auth/callback")
+def auth_callback(request: Request):
+    """Handle Supabase OAuth callback — set JWT cookie and redirect to admin."""
+    access_token = request.query_params.get("access_token")
+    refresh_token = request.query_params.get("refresh_token")
+    error = request.query_params.get("error")
+
+    if error:
+        logger.error(f"OAuth error: {error}")
+        return RedirectResponse(url=f"/admin/?error={urllib.parse.quote(error)}")
+
+    if not access_token:
+        logger.error("OAuth callback missing access_token")
+        return RedirectResponse(url="/admin/?error=no_token")
+
+    # Verify the JWT before setting cookie
+    if SUPABASE_JWT_SECRET:
+        try:
+            payload = jwt.decode(access_token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
+            email = payload.get("email", "")
+            if ALLOWED_ADMIN_EMAILS and email not in ALLOWED_ADMIN_EMAILS:
+                logger.warning(f"Google auth rejected (not in allowed list): {email}")
+                return RedirectResponse(url="/admin/?error=unauthorized")
+            logger.info(f"Google auth success: {email}")
+        except Exception as e:
+            logger.error(f"JWT verification failed: {e}")
+            return RedirectResponse(url="/admin/?error=invalid_token")
+
+    response = RedirectResponse(url="/admin/")
+    response.set_cookie(
+        key="poly_admin_token", value=access_token,
+        httponly=True, secure=True, samesite="lax", max_age=86400 * 7,
+        path="/"
+    )
+    return response
+
+
+@app.post("/api/auth/logout")
+def auth_logout(response: Response):
+    try:
+        response.delete_cookie("poly_admin_token", path="/")
+        logger.info("User logged out")
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Logout error: {e}")
+        raise HTTPException(status_code=500, detail="Internal error")
+
+
+@app.get("/api/auth/config")
+def auth_config():
+    """Return auth configuration for the frontend (public info only)."""
+    return {
+        "google_enabled": bool(SUPABASE_URL),
+        "has_legacy": True,
+    }
 
 
 # ===================== STATIC / ROOT =====================
