@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poly Admin Panel</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#09090b;--surface:#18181b;--border:#27272a;--text:#fafafa;--muted:#a1a1aa;--accent:#8b5cf6;--accent2:#a78bfa;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--orange:#f97316;--blue:#3b82f6}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+
+/* Sidebar */
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column;position:fixed;height:100vh;z-index:10}
+.sidebar .logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.sidebar .logo .icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.sidebar .logo span{font-weight:700;font-size:18px}
+.sidebar nav a{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--muted);text-decoration:none;font-size:14px;transition:all .2s}
+.sidebar nav a:hover,.sidebar nav a.active{color:var(--text);background:rgba(139,92,246,.1)}
+.sidebar nav a.active{border-right:3px solid var(--accent);color:var(--accent2)}
+.sidebar nav a svg{width:18px;height:18px;opacity:.7}
+.sidebar .version{margin-top:auto;padding:16px 20px;color:var(--muted);font-size:12px;border-top:1px solid var(--border)}
+
+/* Main */
+.main{margin-left:240px;flex:1;padding:32px;max-width:1200px}
+.main h1{font-size:24px;font-weight:700;margin-bottom:4px}
+.main .subtitle{color:var(--muted);font-size:14px;margin-bottom:28px}
+
+/* Login Screen */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:360px}
+.login-box h2{text-align:center;margin-bottom:8px}
+.login-box p{text-align:center;color:var(--muted);font-size:14px;margin-bottom:24px}
+.login-box input{width:100%;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;margin-bottom:12px;outline:none;transition:border .2s}
+.login-box input:focus{border-color:var(--accent)}
+.login-box button{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s}
+.login-box button:hover{background:var(--accent2)}
+.login-box .error{color:var(--red);font-size:13px;text-align:center;margin-top:8px;display:none}
+
+/* Stats Cards */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:32px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;transition:transform .2s,border-color .2s}
+.stat-card:hover{transform:translateY(-2px);border-color:var(--accent)}
+.stat-card .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.stat-card .value{font-size:28px;font-weight:800}
+.stat-card .change{font-size:12px;margin-top:4px}
+.stat-card .change.up{color:var(--green)}
+.stat-card .change.down{color:var(--red)}
+
+/* Section Cards */
+.section{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:24px;overflow:hidden}
+.section-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)}
+.section-header h3{font-size:16px;font-weight:600}
+.section-header .badge{background:var(--accent);color:#fff;font-size:11px;padding:3px 10px;border-radius:99px;font-weight:600}
+
+/* Search + Filters Bar */
+.toolbar{display:flex;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center}
+.toolbar input,.toolbar select{padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;transition:border .2s}
+.toolbar input{flex:1;min-width:200px}
+.toolbar input:focus,.toolbar select:focus{border-color:var(--accent)}
+.toolbar select{cursor:pointer}
+
+/* Table */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:1px solid var(--border);font-weight:600}
+td{padding:10px 16px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(139,92,246,.03)}
+
+/* Tags */
+.tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.tag-free{background:rgba(34,197,94,.15);color:var(--green)}
+.tag-pro{background:rgba(59,130,246,.15);color:var(--blue)}
+.tag-enterprise{background:rgba(139,92,246,.15);color:var(--accent2)}
+.tag-active{background:rgba(34,197,94,.15);color:var(--green)}
+.tag-inactive{background:rgba(239,68,68,.15);color:var(--red)}
+.tag-source{background:rgba(161,161,170,.1);color:var(--muted)}
+
+/* Buttons */
+.btn{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--accent);color:var(--accent2)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent2)}
+.btn-danger{color:var(--red);border-color:rgba(239,68,68,.3)}
+.btn-danger:hover{background:rgba(239,68,68,.1);border-color:var(--red)}
+.btn-sm{padding:4px 10px;font-size:12px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:480px;max-width:90vw}
+.modal h3{margin-bottom:20px;font-size:18px}
+.modal label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;margin-top:12px}
+.modal label:first-of-type{margin-top:0}
+.modal input,.modal select{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none}
+.modal input:focus,.modal select:focus{border-color:var(--accent)}
+.modal .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}
+
+/* Referral Bars */
+.referral-bars{padding:20px}
+.ref-bar{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.ref-bar .name{width:120px;font-size:13px;color:var(--muted);text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ref-bar .bar-bg{flex:1;height:28px;background:var(--bg);border-radius:6px;overflow:hidden;position:relative}
+.ref-bar .bar-fill{height:100%;border-radius:6px;transition:width .6s ease;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;color:#fff;min-width:fit-content}
+
+/* Activity Feed */
+.activity-list{padding:16px 20px}
+.activity-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.activity-item:last-child{border-bottom:none}
+.activity-item .dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.activity-item .dot.signup{background:var(--green)}
+.activity-item .dot.updated{background:var(--blue)}
+.activity-item .dot.api_call{background:var(--accent)}
+.activity-item .time{color:var(--muted);font-size:12px;margin-top:2px}
+
+/* Pagination */
+.pagination{display:flex;justify-content:center;gap:6px;padding:16px}
+.pagination button{padding:6px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:13px;cursor:pointer}
+.pagination button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pagination button:disabled{opacity:.3;cursor:default}
+
+/* User detail row */
+.user-detail{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* Chart area */
+.chart-area{padding:20px}
+.mini-chart{display:flex;align-items:flex-end;gap:3px;height:80px}
+.mini-chart .bar{flex:1;background:var(--accent);border-radius:3px 3px 0 0;min-height:2px;transition:height .3s;opacity:.7}
+.mini-chart .bar:hover{opacity:1}
+.mini-chart-labels{display:flex;gap:3px;margin-top:4px}
+.mini-chart-labels span{flex:1;text-align:center;font-size:9px;color:var(--muted)}
+
+/* Copy button */
+.copy-btn{cursor:pointer;color:var(--muted);font-size:12px;background:none;border:none;padding:2px 4px}
+.copy-btn:hover{color:var(--accent2)}
+.copy-btn.copied{color:var(--green)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:13px;z-index:200;transform:translateY(100px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:var(--green)}
+.toast.error{border-color:var(--red)}
+
+/* Hidden */
+.hidden{display:none!important}
+
+@media(max-width:768px){
+  .sidebar{width:60px}.sidebar .logo span,.sidebar nav a span,.sidebar nav a svg,.sidebar .version{display:none}
+  .sidebar nav a{justify-content:center;padding:14px 0}
+  .main{margin-left:60px;padding:16px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="login-screen">
+  <div class="login-box">
+    <h2>Admin Access</h2>
+    <p>Poly Control Panel</p>
+    <input type="text" id="login-user" placeholder="Username" value="admin">
+    <input type="password" id="login-pass" placeholder="Password">
+    <button onclick="doLogin()">Sign In</button>
+    <div class="error" id="login-error">Invalid credentials</div>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="icon">P</div>
+    <span>Poly</span>
+  </div>
+  <nav>
+    <a href="#stats-section" class="active" onclick="showTab('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Dashboard</span>
+    </a>
+    <a href="#users-section" onclick="showTab('users')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      <span>Users</span>
+    </a>
+    <a href="#activity-section" onclick="showTab('activity')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Activity</span>
+    </a>
+    <a href="/dashboard/" target="_blank">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      <span>Test Dashboard</span>
+    </a>
+  </nav>
+  <div class="version">Poly v2.0.0</div>
+</aside>
+
+<!-- Main Content -->
+<div class="main" id="app-content" style="display:none">
+
+  <!-- Stats Tab -->
+  <div id="stats-tab">
+    <h1>Admin Dashboard</h1>
+    <p class="subtitle">User analytics and platform overview</p>
+
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <!-- Signup Chart -->
+      <div class="section">
+        <div class="section-header"><h3>Signups (Last 30 Days)</h3></div>
+        <div class="chart-area">
+          <div class="mini-chart" id="signup-chart"></div>
+          <div class="mini-chart-labels" id="signup-labels"></div>
+        </div>
+      </div>
+      <!-- Referral Sources -->
+      <div class="section">
+        <div class="section-header"><h3>Top Referrers</h3></div>
+        <div class="referral-bars" id="referral-bars"></div>
+      </div>
+      <!-- Signup Sources -->
+      <div class="section">
+        <div class="section-header"><h3>Signup Sources</h3></div>
+        <div class="referral-bars" id="source-bars"></div>
+      </div>
+      <!-- Plan Distribution -->
+      <div class="section">
+        <div class="section-header"><h3>Plan Distribution</h3></div>
+        <div class="referral-bars" id="plan-bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users Tab -->
+  <div id="users-tab" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div>
+        <h1>Users</h1>
+        <p class="subtitle" id="users-count"></p>
+      </div>
+      <button class="btn btn-primary" onclick="openAddUser()">+ Add User</button>
+    </div>
+
+    <div class="section">
+      <div class="toolbar">
+        <input type="text" id="search-input" placeholder="Search by name, email, or GitHub..." oninput="debounceSearch()">
+        <select id="plan-filter" onchange="loadUsers()">
+          <option value="">All Plans</option>
+          <option value="free">Free</option>
+          <option value="pro">Pro</option>
+          <option value="enterprise">Enterprise</option>
+        </select>
+        <select id="sort-select" onchange="loadUsers()">
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Plan</th>
+              <th>Source</th>
+              <th>Referrer</th>
+              <th>API Key</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+  <!-- Activity Tab -->
+  <div id="activity-tab" class="hidden">
+    <h1>Recent Activity</h1>
+    <p class="subtitle">Latest user actions and events</p>
+    <div class="section">
+      <div class="activity-list" id="activity-feed"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit User Modal -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal">
+    <h3 id="modal-title">Add New User</h3>
+    <input type="hidden" id="edit-user-id">
+    <label>Name *</label><input type="text" id="form-name" placeholder="John Doe">
+    <label>Email *</label><input type="email" id="form-email" placeholder="john@company.com">
+    <label>GitHub Username</label><input type="text" id="form-github" placeholder="@johndoe">
+    <label>Plan</label>
+    <select id="form-plan"><option value="free">Free</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select>
+    <label>Signup Source</label>
+    <select id="form-source">
+      <option value="">Manual</option>
+      <option value="github_action">GitHub Action</option>
+      <option value="landing_page">Landing Page</option>
+      <option value="marketplace">GitHub Marketplace</option>
+      <option value="referral">Referral</option>
+      <option value="twitter">Twitter/X</option>
+      <option value="blog">Blog Post</option>
+      <option value="word_of_mouth">Word of Mouth</option>
+    </select>
+    <label>Referrer</label><input type="text" id="form-referrer" placeholder="Who referred them?">
+    <label>Notes</label><input type="text" id="form-notes" placeholder="Any notes...">
+    <div class="actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveUser()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+let currentPage = 1;
+let searchTimer;
+
+// Login
+async function doLogin() {
+  const u = document.getElementById('login-user').value;
+  const p = document.getElementById('login-pass').value;
+  try {
+    const r = await fetch(API + '/api/admin/login', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username: u, password: p})
+    });
+    if (!r.ok) { document.getElementById('login-error').style.display='block'; return; }
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app-content').style.display='block';
+    loadAll();
+  } catch(e) { document.getElementById('login-error').style.display='block'; }
+}
+
+// Check session on load
+(async () => {
+  try {
+    const r = await fetch(API + '/api/admin/me');
+    if (r.ok) {
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('app-content').style.display='block';
+      loadAll();
+    }
+  } catch(e) {}
+})();
+
+// Tabs
+function showTab(tab) {
+  document.querySelectorAll('[id$="-tab"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById(tab + '-tab').classList.remove('hidden');
+  document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+// Load all data
+async function loadAll() {
+  loadStats();
+  loadUsers();
+}
+
+// Stats
+async function loadStats() {
+  const [statsRes, usersRes] = await Promise.all([
+    fetch(API + '/api/admin/stats'),
+    fetch(API + '/api/admin/users?per_page=100')
+  ]);
+  const stats = await statsRes.json();
+  const usersData = await usersRes.json();
+
+  // Stats cards
+  const cards = [
+    {label:'Total Users', value: stats.total_users, color:'var(--accent)'},
+    {label:'Active Users', value: stats.active_users, color:'var(--green)'},
+    {label:'New This Week', value: stats.new_this_week, color:'var(--blue)'},
+    {label:'New Today', value: stats.new_today, color:'var(--yellow)'},
+    {label:'Pro Users', value: stats.pro_users, color:'var(--accent2)'},
+    {label:'Enterprise', value: stats.enterprise_users, color:'var(--orange)'},
+    {label:'Total Repos', value: stats.total_repos, color:'var(--green)'},
+    {label:'CI Runs Today', value: stats.runs_today, color:'var(--blue)'},
+  ];
+  document.getElementById('stats-grid').innerHTML = cards.map(c =>
+    `<div class="stat-card"><div class="label">${c.label}</div><div class="value" style="color:${c.color}">${c.value}</div></div>`
+  ).join('');
+
+  // Signup chart
+  const daily = usersData.daily_signups || [];
+  const maxVal = Math.max(...daily.map(d => d.cnt), 1);
+  document.getElementById('signup-chart').innerHTML = daily.map(d =>
+    `<div class="bar" style="height:${(d.cnt/maxVal)*100}%" title="${d.day}: ${d.cnt} signups"></div>`
+  ).join('');
+  document.getElementById('signup-labels').innerHTML = daily.map(d =>
+    `<span>${d.day.slice(5)}</span>`
+  ).join('');
+
+  // Referral bars
+  renderBars('referral-bars', usersData.sources || [], 'referrer');
+
+  // Source bars
+  renderBars('source-bars', stats.top_sources || [], 'signup_source');
+
+  // Plan bars
+  renderBars('plan-bars', usersData.plans || [], 'plan', {'free':'var(--green)','pro':'var(--blue)','enterprise':'var(--accent)'});
+
+  // Activity feed
+  const activity = usersData.recent_activity || [];
+  document.getElementById('activity-feed').innerHTML = activity.length ? activity.map(a => `
+    <div class="activity-item">
+      <div class="dot ${a.action}"></div>
+      <div>
+        <div><strong>${a.name || 'Unknown'}</strong> — ${a.detail || a.action}</div>
+        <div class="time">${timeAgo(a.created_at)}</div>
+      </div>
+    </div>
+  `).join('') : '<p style="color:var(--muted);padding:20px;text-align:center">No activity yet</p>';
+
+  document.getElementById('users-count').textContent = `${usersData.total} total users`;
+}
+
+function renderBars(containerId, data, keyField, colorMap) {
+  const maxVal = Math.max(...data.map(d => d.cnt), 1);
+  const colors = ['#8b5cf6','#3b82f6','#22c55e','#f97316','#eab308'];
+  document.getElementById(containerId).innerHTML = data.length ? data.map((d, i) => {
+    const label = d[keyField] || 'unknown';
+    const color = colorMap ? (colorMap[label] || colors[i % colors.length]) : colors[i % colors.length];
+    return `<div class="ref-bar">
+      <div class="name" title="${label}">${label}</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${(d.cnt/maxVal)*100}%;background:${color}">${d.cnt}</div></div>
+    </div>`;
+  }).join('') : '<p style="color:var(--muted);font-size:13px;padding:8px 0">No data yet</p>';
+}
+
+// Users
+async function loadUsers() {
+  const search = document.getElementById('search-input').value;
+  const plan = document.getElementById('plan-filter').value;
+  const sort = document.getElementById('sort-select').value;
+  const res = await fetch(`${API}/api/admin/users?search=${encodeURIComponent(search)}&plan=${plan}&sort=${sort}&page=${currentPage}&per_page=15`);
+  const data = await res.json();
+
+  document.getElementById('users-tbody').innerHTML = data.users.length ? data.users.map(u => `
+    <tr>
+      <td>
+        <div style="font-weight:600">${esc(u.name || '-')}</div>
+        <div class="user-detail">${esc(u.email || '')} ${u.github_username ? '· @'+esc(u.github_username) : ''}</div>
+      </td>
+      <td><span class="tag tag-${u.plan}">${u.plan}</span></td>
+      <td>${u.signup_source ? '<span class="tag tag-source">'+esc(u.signup_source)+'</span>' : '<span style="color:var(--muted)">-</span>'}</td>
+      <td style="color:var(--muted);font-size:12px">${esc(u.referrer || '-')}</td>
+      <td>
+        <code style="font-size:11px;background:var(--bg);padding:3px 6px;border-radius:4px">${u.api_key ? u.api_key.slice(0,16)+'...' : '-'}</code>
+        ${u.api_key ? `<button class="copy-btn" onclick="copyKey('${u.api_key}')">copy</button>` : ''}
+      </td>
+      <td><span class="tag tag-${u.is_active ? 'active' : 'inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td style="color:var(--muted);font-size:12px;white-space:nowrap">${formatDate(u.created_at)}</td>
+      <td>
+        <button class="btn btn-sm" onclick="editUser(${u.id},'${esc(u.name)}','${esc(u.email||'')}','${esc(u.github_username||'')}','${u.plan}','${esc(u.signup_source||'')}','${esc(u.referrer||'')}','${esc(u.notes||'')}')">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id},'${esc(u.name)}')">Del</button>
+      </td>
+    </tr>
+  `).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">No users found</td></tr>';
+
+  // Pagination
+  const pages = data.total_pages || 1;
+  let pagHtml = `<button ${currentPage<=1?'disabled':''} onclick="goPage(${currentPage-1})">Prev</button>`;
+  for (let i = 1; i <= pages; i++) {
+    if (pages > 7 && Math.abs(i - currentPage) > 2 && i !== 1 && i !== pages) {
+      if (i === currentPage - 3 || i === currentPage + 3) pagHtml += '<button disabled>...</button>';
+      continue;
+    }
+    pagHtml += `<button class="${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  pagHtml += `<button ${currentPage>=pages?'disabled':''} onclick="goPage(${currentPage+1})">Next</button>`;
+  document.getElementById('pagination').innerHTML = pagHtml;
+}
+
+function goPage(p) { currentPage = p; loadUsers(); }
+function debounceSearch() { clearTimeout(searchTimer); searchTimer = setTimeout(loadUsers, 300); }
+
+// Add/Edit User
+function openAddUser() {
+  document.getElementById('modal-title').textContent = 'Add New User';
+  document.getElementById('edit-user-id').value = '';
+  document.getElementById('form-name').value = '';
+  document.getElementById('form-email').value = '';
+  document.getElementById('form-github').value = '';
+  document.getElementById('form-plan').value = 'free';
+  document.getElementById('form-source').value = '';
+  document.getElementById('form-referrer').value = '';
+  document.getElementById('form-notes').value = '';
+  document.getElementById('user-modal').classList.add('show');
+}
+
+function editUser(id, name, email, github, plan, source, referrer, notes) {
+  document.getElementById('modal-title').textContent = 'Edit User';
+  document.getElementById('edit-user-id').value = id;
+  document.getElementById('form-name').value = name;
+  document.getElementById('form-email').value = email;
+  document.getElementById('form-github').value = github;
+  document.getElementById('form-plan').value = plan;
+  document.getElementById('form-source').value = source;
+  document.getElementById('form-referrer').value = referrer;
+  document.getElementById('form-notes').value = notes;
+  document.getElementById('user-modal').classList.add('show');
+}
+
+function closeModal() { document.getElementById('user-modal').classList.remove('show'); }
+
+async function saveUser() {
+  const id = document.getElementById('edit-user-id').value;
+  const body = {
+    name: document.getElementById('form-name').value,
+    email: document.getElementById('form-email').value,
+    github_username: document.getElementById('form-github').value || null,
+    plan: document.getElementById('form-plan').value,
+    signup_source: document.getElementById('form-source').value || null,
+    referrer: document.getElementById('form-referrer').value || null,
+    notes: document.getElementById('form-notes').value || null,
+  };
+  if (!body.name || !body.email) { toast('Name and email required', 'error'); return; }
+
+  let res;
+  if (id) {
+    res = await fetch(`${API}/api/admin/users/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  } else {
+    res = await fetch(`${API}/api/admin/users`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  }
+  if (!res.ok) { const e = await res.json(); toast(e.detail || 'Error', 'error'); return; }
+  closeModal();
+  toast(id ? 'User updated' : 'User created', 'success');
+  loadAll();
+}
+
+async function deleteUser(id, name) {
+  if (!confirm(`Delete user "${name}"? This cannot be undone.`)) return;
+  const res = await fetch(`${API}/api/admin/users/${id}`, {method:'DELETE'});
+  if (!res.ok) { toast('Failed to delete', 'error'); return; }
+  toast(`Deleted "${name}"`, 'success');
+  loadAll();
+}
+
+function copyKey(key) {
+  navigator.clipboard.writeText(key).then(() => toast('API key copied!', 'success'));
+}
+
+// Toast
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Helpers
+function esc(s) { return s ? s.replace(/'/g, "\\'").replace(/"/g, '&quot;') : ''; }
+function formatDate(d) { if (!d) return '-'; return new Date(d + 'Z').toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}); }
+function timeAgo(d) {
+  if (!d) return '';
+  const s = Math.floor((Date.now() - new Date(d + 'Z').getTime()) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+
+// Enter key on login
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>

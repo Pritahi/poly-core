@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poly — Setup Guide</title>
+<style>
+:root {
+  --bg: #09090b;
+  --surface: #111114;
+  --surface-2: #18181b;
+  --border: #27272a;
+  --text: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --purple: #8b5cf6;
+  --purple-light: #a78bfa;
+  --green: #22c55e;
+  --yellow: #eab308;
+  --orange: #f97316;
+  --red: #ef4444;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-xs: 4px;
+  --transition: 0.15s ease;
+  --transition-page: 0.3s ease;
+  --sidebar-w: 220px;
+  --sidebar-collapsed: 60px;
+  --topbar-h: 56px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.7;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: width var(--transition-page);
+  overflow: hidden;
+}
+.sidebar.collapsed { width: var(--sidebar-collapsed); }
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  height: var(--topbar-h);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sidebar-logo {
+  font-size: 22px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--purple), var(--purple-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  white-space: nowrap;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  top: 16px; right: -14px;
+  width: 28px; height: 28px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all var(--transition);
+  z-index: 101;
+}
+.sidebar-toggle:hover {
+  background: var(--purple);
+  color: var(--text);
+  border-color: var(--purple);
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all var(--transition);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.nav-item:hover { background: rgba(139, 92, 246, 0.08); color: var(--text); }
+.nav-item.active { background: rgba(139, 92, 246, 0.15); color: var(--purple-light); }
+.nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+.nav-label { transition: opacity var(--transition-page); }
+.sidebar.collapsed .nav-label { opacity: 0; pointer-events: none; }
+.sidebar.collapsed .sidebar-logo span { display: none; }
+
+/* ===== MAIN ===== */
+.main {
+  margin-left: var(--sidebar-w);
+  min-height: 100vh;
+  transition: margin-left var(--transition-page);
+}
+.sidebar.collapsed ~ .main { margin-left: var(--sidebar-collapsed); }
+
+/* ===== TOPBAR ===== */
+.topbar {
+  height: var(--topbar-h);
+  background: rgba(9, 9, 11, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.topbar-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ===== CONTENT ===== */
+.content {
+  padding: 32px 24px;
+  max-width: 860px;
+}
+
+/* ===== SECTION ===== */
+.guide-section {
+  margin-bottom: 48px;
+}
+
+.guide-section > h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.guide-section > h2 .section-num {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--purple);
+  background: rgba(139,92,246,0.12);
+  border: 1px solid rgba(139,92,246,0.25);
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+
+.guide-section > p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin-bottom: 20px;
+  line-height: 1.8;
+}
+
+/* Step cards */
+.step {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.step-num {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(139,92,246,0.12);
+  border: 1px solid rgba(139,92,246,0.3);
+  color: var(--purple-light);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.step-body { flex: 1; }
+.step-body h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.step-body p { color: var(--text-secondary); font-size: 14px; margin-bottom: 12px; }
+
+/* ===== CODE BLOCKS ===== */
+.code-block {
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--border);
+}
+
+.code-lang {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.copy-btn:hover {
+  color: var(--text);
+  border-color: var(--purple);
+  background: rgba(139,92,246,0.08);
+}
+.copy-btn.copied {
+  color: var(--green);
+  border-color: var(--green);
+  background: rgba(34,197,94,0.08);
+}
+
+.code-block pre {
+  padding: 16px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  tab-size: 2;
+}
+
+.code-block pre .hl-kw { color: #c084fc; }
+.code-block pre .hl-str { color: #86efac; }
+.code-block pre .hl-key { color: #93c5fd; }
+.code-block pre .hl-val { color: #fbbf24; }
+.code-block pre .hl-comment { color: #52525b; font-style: italic; }
+.code-block pre .hl-func { color: #67e8f9; }
+.code-block pre .hl-num { color: #fbbf24; }
+
+/* Inline code */
+code {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  color: var(--purple-light);
+}
+
+/* ===== API TABLE ===== */
+.api-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.api-table thead th {
+  background: rgba(255,255,255,0.02);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.api-table tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(39,39,42,0.5);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+
+.api-table tbody tr:last-child td { border-bottom: none; }
+.api-table tbody tr:hover { background: rgba(255,255,255,0.015); }
+
+.method-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--mono);
+}
+
+.method-tag.get { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+.method-tag.post { background: rgba(96,165,250,0.1); color: #60a5fa; border: 1px solid rgba(96,165,250,0.25); }
+.method-tag.delete { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+
+.path-cell {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* ===== ALGORITHM VISUAL ===== */
+.algo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.algo-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  transition: all var(--transition);
+}
+.algo-card:hover { border-color: rgba(139,92,246,0.3); }
+
+.algo-card .algo-weight {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--purple-light);
+  margin-bottom: 6px;
+}
+
+.algo-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+
+.algo-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.algo-card.algo-penalty { grid-column: 1 / -1; border-left: 3px solid var(--red); }
+
+.algo-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+.algo-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s ease;
+}
+
+/* Flaky categories */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.cat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  transition: all var(--transition);
+}
+.cat-card:hover { border-color: rgba(139,92,246,0.3); }
+
+.cat-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cat-icon svg { width: 18px; height: 18px; }
+
+.cat-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.cat-card p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+/* ===== BADGE PREVIEW ===== */
+.badge-preview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.badge-preview-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.badge-preview img {
+  height: 28px;
+  border-radius: var(--radius-xs);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .sidebar { width: var(--sidebar-collapsed); }
+  .sidebar .nav-label, .sidebar .sidebar-logo span { display: none; }
+  .main { margin-left: var(--sidebar-collapsed) !important; }
+  .algo-grid, .cat-grid { grid-template-columns: 1fr; }
+  .content { padding: 24px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo"><span>Poly</span></div>
+  </div>
+  <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
+    <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
+      <path d="M3.646 3.646a.5.5 0 0 1 .708 0L8 7.293l3.646-3.647a.5.5 0 0 1 .708.708L8.707 8l3.647 3.646a.5.5 0 0 1-.708.708L8 8.707l-3.646 3.647a.5.5 0 0 1-.708-.708L7.293 8 3.646 4.354a.5.5 0 0 1 0-.708z" id="toggleIcon"/>
+    </svg>
+  </button>
+  <nav class="sidebar-nav">
+    <a href="/dashboard/" class="nav-item" data-page="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>
+      </svg>
+      <span class="nav-label">Dashboard</span>
+    </a>
+    <a href="/dashboard/tests.html" class="nav-item" data-page="tests">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+      </svg>
+      <span class="nav-label">Tests</span>
+    </a>
+    <a href="/dashboard/guide.html" class="nav-item active" data-page="guide">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+      <span class="nav-label">Guide</span>
+    </a>
+  </nav>
+</aside>
+
+<!-- Main -->
+<div class="main" id="mainArea">
+  <div class="topbar">
+    <div class="topbar-title">Setup Guide</div>
+  </div>
+
+  <div class="content">
+
+    <!-- Section 1: Quick Start -->
+    <div class="guide-section" id="quick-start">
+      <h2><span class="section-num">1</span> Quick Start</h2>
+      <p>Get Poly running in your CI pipeline in under 2 minutes. Sign up, add the GitHub Action, and start seeing trust scores.</p>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Sign up and get your API key</h3>
+          <p>Create an account at your Poly instance. You'll receive an API key to authenticate requests.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Add the GitHub Action to your workflow</h3>
+          <p>Add this step after your test runner. Make sure your tests output JUnit XML format.</p>
+
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-lang">YAML</span>
+              <button class="copy-btn" onclick="copyCode(this)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy
+              </button>
+            </div>
+            <pre><span class="hl-comment"># .github/workflows/ci.yml</span>
+<span class="hl-kw">name</span><span class="hl-key">:</span> <span class="hl-str">CI with Poly</span>
+<span class="hl-kw">on</span><span class="hl-key">:</span> <span class="hl-val">[push, pull_request]</span>
+
+<span class="hl-kw">jobs</span><span class="hl-key">:</span>
+  <span class="hl-key">test</span><span class="hl-key">:</span>
+    <span class="hl-kw">runs-on</span><span class="hl-key">:</span> <span class="hl-str">ubuntu-latest</span>
+    <span class="hl-kw">steps</span><span class="hl-key">:</span>
+      - <span class="hl-kw">uses</span><span class="hl-key">:</span> <span class="hl-str">actions/checkout@v4</span>
+      - <span class="hl-kw">run</span><span class="hl-key">:</span> <span class="hl-str">npm test -- --reporter junit --reporter-options output=test-results.xml</span>
+      - <span class="hl-kw">uses</span><span class="hl-key">:</span> <span class="hl-str">Pritahi/poly-action@v1</span>
+        <span class="hl-kw">with</span><span class="hl-key">:</span>
+          <span class="hl-kw">api_key</span><span class="hl-key">:</span> <span class="hl-val">${{ secrets.POLY_API_KEY }}</span>
+          <span class="hl-kw">junit_path</span><span class="hl-key">:</span> <span class="hl-str">'test-results/*.xml'</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Python SDK -->
+    <div class="guide-section" id="python-sdk">
+      <h2><span class="section-num">2</span> Python SDK</h2>
+      <p>Use the Python SDK to ingest test results programmatically, query dashboards, and configure alerts.</p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">Shell</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre>pip install poly-trust</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="hl-kw">from</span> <span class="hl-func">poly</span> <span class="hl-kw">import</span> <span class="hl-func">Poly</span>
+
+<span class="hl-comment"># Initialize with your API key</span>
+<span class="hl-func">p</span> = <span class="hl-func">Poly</span>(<span class="hl-str">"your-api-key"</span>)
+
+<span class="hl-comment"># Ingest a JUnit XML file</span>
+<span class="hl-func">result</span> = p.<span class="hl-func">ingest_junit</span>(<span class="hl-str">"path/to/junit.xml"</span>)
+<span class="hl-func">print</span>(result[<span class="hl-str">"avg_trust_score"</span>])
+
+<span class="hl-comment"># Get dashboard data</span>
+<span class="hl-func">dashboard</span> = p.<span class="hl-func">dashboard</span>(<span class="hl-str">"my-repo"</span>)
+
+<span class="hl-comment"># List all tests with trust scores</span>
+<span class="hl-func">tests</span> = p.<span class="hl-func">list_tests</span>(<span class="hl-str">"my-repo"</span>)
+
+<span class="hl-comment"># Get details for a specific test</span>
+<span class="hl-func">detail</span> = p.<span class="hl-func">test_detail</span>(<span class="hl-str">"my-repo"</span>, <span class="hl-str">"TestClass.test_method"</span>)
+
+<span class="hl-comment"># View quarantined tests</span>
+<span class="hl-func">quarantined</span> = p.<span class="hl-func">quarantined</span>(<span class="hl-str">"my-repo"</span>)
+
+<span class="hl-comment"># Configure alerts (Discord/Slack)</span>
+p.<span class="hl-func">configure_alerts</span>(
+    <span class="hl-key">repo_name</span>=<span class="hl-str">"my-repo"</span>,
+    <span class="hl-key">webhook_url</span>=<span class="hl-str">"https://discord.com/api/webhooks/..."</span>,
+    <span class="hl-key">channel_type</span>=<span class="hl-str">"discord"</span>,
+    <span class="hl-key">min_trust_drop</span>=<span class="hl-num">20</span>,
+    <span class="hl-key">alert_on_flaky</span>=<span class="hl-val">True</span>,
+    <span class="hl-key">alert_on_quarantine</span>=<span class="hl-val">True</span>
+)
+
+<span class="hl-comment"># Get badge URL for your README</span>
+<span class="hl-func">url</span> = p.<span class="hl-func">badge_url</span>(<span class="hl-str">"my-repo"</span>)</pre>
+      </div>
+
+      <h3 style="font-size:15px;font-weight:600;margin-top:24px;margin-bottom:12px">Available Methods</h3>
+      <table class="api-table">
+        <thead>
+          <tr><th>Method</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>ingest_junit(path)</code></td><td>Ingest a JUnit XML file for a repo</td></tr>
+          <tr><td><code>ingest_results(results)</code></td><td>Ingest raw test results (list of dicts)</td></tr>
+          <tr><td><code>dashboard(repo)</code></td><td>Get aggregated dashboard data</td></tr>
+          <tr><td><code>list_tests(repo)</code></td><td>List all tests with trust scores</td></tr>
+          <tr><td><code>test_detail(repo, name)</code></td><td>Get detailed info for a single test</td></tr>
+          <tr><td><code>quarantined(repo)</code></td><td>Get quarantined tests below threshold</td></tr>
+          <tr><td><code>configure_alerts(...)</code></td><td>Set up Discord/Slack webhook alerts</td></tr>
+          <tr><td><code>badge_url(repo)</code></td><td>Get the trust badge SVG URL</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Section 3: REST API -->
+    <div class="guide-section" id="rest-api">
+      <h2><span class="section-num">3</span> REST API Reference</h2>
+      <p>All endpoints require the <code>X-Poly-API-Key</code> header for write operations. Read operations (GET) are open by default.</p>
+
+      <table class="api-table">
+        <thead>
+          <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="method-tag post">POST</span></td>
+            <td class="path-cell">/api/junit</td>
+            <td>Ingest JUnit XML content. Body: <code>{"xml_content": "...", "repo_name": "..."}</code></td>
+          </tr>
+          <tr>
+            <td><span class="method-tag post">POST</span></td>
+            <td class="path-cell">/api/runs</td>
+            <td>Create a test run from raw results. Body: <code>{"test_results": [...], "repo_name": "..."}</code></td>
+          </tr>
+          <tr>
+            <td><span class="method-tag get">GET</span></td>
+            <td class="path-cell">/api/dashboard?repo_name=X</td>
+            <td>Get aggregated stats, flaky tests, recent runs, and trust distribution</td>
+          </tr>
+          <tr>
+            <td><span class="method-tag get">GET</span></td>
+            <td class="path-cell">/api/tests?repo_name=X</td>
+            <td>List all tests with trust scores, pass rates, and flaky categories</td>
+          </tr>
+          <tr>
+            <td><span class="method-tag get">GET</span></td>
+            <td class="path-cell">/api/tests/{name}?repo_name=X</td>
+            <td>Get detailed test info including history, score breakdown, and error patterns</td>
+          </tr>
+          <tr>
+            <td><span class="method-tag get">GET</span></td>
+            <td class="path-cell">/api/quarantined?repo_name=X</td>
+            <td>Get tests below the trust threshold (default: 30)</td>
+          </tr>
+          <tr>
+            <td><span class="method-tag get">GET</span></td>
+            <td class="path-cell">/api/runs?repo_name=X</td>
+            <td>Get recent CI runs for a repository (max 100)</td>
+          </tr>
+          <tr>
+            <td><span class="method-tag get">GET</span></td>
+            <td class="path-cell">/api/repos</td>
+            <td>List all tracked repositories with aggregate stats</td>
+          </tr>
+          <tr>
+            <td><span class="method-tag get">GET</span></td>
+            <td class="path-cell">/badge/{repo_name}</td>
+            <td>Get an SVG trust score badge for a repository</td>
+          </tr>
+          <tr>
+            <td><span class="method-tag post">POST</span></td>
+            <td class="path-cell">/api/alerts/config?repo_name=X</td>
+            <td>Configure webhook alerts (Discord/Slack)</td>
+          </tr>
+          <tr>
+            <td><span class="method-tag delete">DELETE</span></td>
+            <td class="path-cell">/api/tests/{name}?repo_name=X</td>
+            <td>Delete all history for a specific test</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 style="font-size:15px;font-weight:600;margin-top:28px;margin-bottom:12px">Example Requests</h3>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">cURL — Ingest JUnit</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre>curl -X POST https://your-poly-instance.com/api/junit \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -H <span class="hl-str">"X-Poly-API-Key: your-key"</span> \
+  -d <span class="hl-str">'{"xml_content": "...", "repo_name": "my-repo", "branch": "main"}'</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">cURL — Get Dashboard</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre>curl https://your-poly-instance.com/api/dashboard?repo_name=my-repo</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">cURL — Configure Alerts</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre>curl -X POST https://your-poly-instance.com/api/alerts/config?repo_name=my-repo \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -H <span class="hl-str">"X-Poly-API-Key: your-key"</span> \
+  -d <span class="hl-str">'{"webhook_url": "https://discord.com/...", "channel_type": "discord"}'</span></pre>
+      </div>
+    </div>
+
+    <!-- Section 4: Trust Score Algorithm -->
+    <div class="guide-section" id="algorithm">
+      <h2><span class="section-num">4</span> Trust Score Algorithm</h2>
+      <p>Each test receives a trust score from 0 to 100. The score is calculated from four weighted components plus an optional flaky penalty.</p>
+
+      <div class="algo-grid">
+        <div class="algo-card">
+          <div class="algo-weight">60% weight</div>
+          <h3>Pass Rate</h3>
+          <p>The percentage of recent runs that passed. A consistently passing test earns close to the full 60 points.</p>
+          <div class="algo-bar"><div class="algo-bar-fill" style="width:60%;background:var(--green)"></div></div>
+        </div>
+        <div class="algo-card">
+          <div class="algo-weight">20% weight</div>
+          <h3>Recent Trend</h3>
+          <p>Compares pass rate of the last 5 runs vs. the previous 5. Improving tests get a bonus; degrading tests lose points.</p>
+          <div class="algo-bar"><div class="algo-bar-fill" style="width:20%;background:var(--purple)"></div></div>
+        </div>
+        <div class="algo-card">
+          <div class="algo-weight">10% weight</div>
+          <h3>Duration Variance</h3>
+          <p>Measures coefficient of variation in execution time. Consistent durations suggest stability; erratic timing indicates flakiness.</p>
+          <div class="algo-bar"><div class="algo-bar-fill" style="width:10%;background:var(--yellow)"></div></div>
+        </div>
+        <div class="algo-card">
+          <div class="algo-weight">10% weight</div>
+          <h3>Error Pattern Consistency</h3>
+          <p>When a test fails, consistent error messages indicate a real bug, while varied errors suggest flakiness.</p>
+          <div class="algo-bar"><div class="algo-bar-fill" style="width:10%;background:var(--orange)"></div></div>
+        </div>
+        <div class="algo-card algo-penalty">
+          <div class="algo-weight" style="color:var(--red)">-5 to -20 penalty</div>
+          <h3 style="color:var(--red)">Flaky Category Penalty</h3>
+          <p>If a test is classified as flaky, an additional penalty is applied based on the category severity:</p>
+          <p style="margin-top:6px">
+            <code style="border-color:rgba(249,115,22,0.3);color:var(--orange)">timing</code> &minus;5 &nbsp;
+            <code style="border-color:rgba(139,92,246,0.3);color:var(--purple-light)">order_dependency</code> &minus;10 &nbsp;
+            <code style="border-color:rgba(239,68,68,0.3);color:var(--red)">shared_state</code> &minus;15 &nbsp;
+            <code style="border-color:rgba(234,179,8,0.3);color:var(--yellow)">non_deterministic_data</code> &minus;20
+          </p>
+        </div>
+      </div>
+
+      <h3 style="font-size:15px;font-weight:600;margin-bottom:14px">Flaky Categories</h3>
+      <div class="cat-grid">
+        <div class="cat-card">
+          <div class="cat-icon" style="background:rgba(249,115,22,0.12);color:var(--orange)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div>
+            <h4 style="color:var(--orange)">Timing</h4>
+            <p>High duration variance. Test execution time is unpredictable, suggesting race conditions or timeout sensitivity.</p>
+          </div>
+        </div>
+        <div class="cat-card">
+          <div class="cat-icon" style="background:rgba(139,92,246,0.12);color:var(--purple-light)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          </div>
+          <div>
+            <h4 style="color:var(--purple-light)">Order Dependency</h4>
+            <p>Test outcome changes based on execution order. Frequent pass/fail transitions indicate isolation issues.</p>
+          </div>
+        </div>
+        <div class="cat-card">
+          <div class="cat-icon" style="background:rgba(239,68,68,0.12);color:var(--red)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div>
+            <h4 style="color:var(--red)">Shared State</h4>
+            <p>Test shares mutable state with other tests. Fails intermittently with consistent error messages.</p>
+          </div>
+        </div>
+        <div class="cat-card">
+          <div class="cat-icon" style="background:rgba(234,179,8,0.12);color:var(--yellow)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          </div>
+          <div>
+            <h4 style="color:var(--yellow)">Non-deterministic Data</h4>
+            <p>Test fails due to unpredictable external data, random values, or varying API responses.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5: Badge -->
+    <div class="guide-section" id="badge">
+      <h2><span class="section-num">5</span> Badge for README</h2>
+      <p>Add a live trust score badge to your repository's README. It updates automatically with each CI run.</p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">Markdown</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="hl-comment">![Trust Score](https://your-poly-instance.com/badge/your-repo)</span></pre>
+      </div>
+
+      <div class="badge-preview">
+        <span class="badge-preview-label">Preview:</span>
+        <img src="/badge/demo-repo" alt="Trust Score Badge" id="badgePreview"
+             onerror="this.style.display='none'; document.getElementById('badgePlaceholder').style.display='inline-block';">
+        <span id="badgePlaceholder" style="display:none;font-family:var(--mono);font-size:13px;color:var(--text-muted)">
+          Badge will appear here when connected to a Poly instance
+        </span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// Sidebar toggle
+$('sidebarToggle').addEventListener('click', () => {
+  $('sidebar').classList.toggle('collapsed');
+});
+
+// Copy code block
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  const text = pre.textContent || pre.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = originalHTML;
+    }, 2000);
+  }).catch(() => {
+    // Fallback for non-HTTPS
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+    }, 2000);
+  });
+}
+
+// Smooth scroll for hash links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+</body>
+</html>

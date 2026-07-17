@@ -1,0 +1,3102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poly — Flaky Test Detection SaaS</title>
+<style>
+/* ============================================
+   CSS CUSTOM PROPERTIES
+   ============================================ */
+:root {
+  --bg-dark: #0a0a0c;
+  --bg-board: #1a1611;
+  --bg-surface: #12111a;
+  --bg-card: #1c1a24;
+  --border: #2a2836;
+  --border-red: #5c2020;
+  --text-primary: #e8e4df;
+  --text-secondary: #8a8694;
+  --text-dim: #5a5666;
+  --red: #c94040;
+  --red-glow: #ff444488;
+  --amber: #d4a040;
+  --amber-dim: #8b6914;
+  --green: #3d9970;
+  --blue: #4a8fd4;
+  --purple: #7c5cbf;
+  --mx: 50%;
+  --my: 50%;
+  --mono: 'Courier New', 'SF Mono', 'Fira Code', monospace;
+  --sans: system-ui, -apple-system, sans-serif;
+}
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: var(--sans);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+a {
+  color: var(--blue);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: var(--amber);
+}
+
+::selection {
+  background: rgba(212, 160, 64, 0.3);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   ANIMATIONS KEYFRAMES
+   ============================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes stampSlam {
+  0% { transform: rotate(-8deg) scale(1.4); opacity: 0; }
+  60% { transform: rotate(-8deg) scale(0.95); opacity: 1; }
+  100% { transform: rotate(-8deg) scale(1); opacity: 1; }
+}
+
+@keyframes pushpinBounce {
+  0% { transform: translateY(-10px); }
+  40% { transform: translateY(3px); }
+  70% { transform: translateY(-2px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes drawLine {
+  from { stroke-dashoffset: 500; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes gaugeFill {
+  from { stroke-dashoffset: 440; }
+  to { stroke-dashoffset: var(--gauge-target, 66); }
+}
+
+@keyframes policeLine {
+  from { background-position: 0 0; }
+  to { background-position: 56px 0; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes typewriterBlink {
+  0%, 50% { border-color: var(--amber); }
+  51%, 100% { border-color: transparent; }
+}
+
+@keyframes floatBadge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes nodeGlow {
+  0%, 100% { box-shadow: 0 0 4px var(--red); }
+  50% { box-shadow: 0 0 16px var(--red), 0 0 32px var(--red-glow); }
+}
+
+/* ============================================
+   SCROLL REVEAL SYSTEM
+   ============================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* ============================================
+   SECTION COMMON
+   ============================================ */
+.section-title {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 8px;
+}
+
+.section-subtitle {
+  font-family: var(--sans);
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin-bottom: 48px;
+  max-width: 520px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+section {
+  padding: 100px 0;
+  position: relative;
+}
+
+/* ============================================
+   1. NAVIGATION
+   ============================================ */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(10, 10, 12, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(201, 64, 64, 0.2);
+  transition: backdrop-filter 0.3s, background 0.3s;
+}
+
+.nav.scrolled {
+  background: rgba(10, 10, 12, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+  text-decoration: none;
+}
+
+.nav-logo svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover {
+  color: var(--text-primary);
+}
+
+.nav-cta {
+  font-family: var(--mono) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber) !important;
+  border: 1px solid var(--amber);
+  padding: 8px 20px;
+  border-radius: 2px;
+  transition: background 0.2s, color 0.2s !important;
+}
+
+.nav-cta:hover {
+  background: var(--amber) !important;
+  color: var(--bg-dark) !important;
+}
+
+.nav-mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.nav-mobile-toggle svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--text-primary);
+}
+
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  background: rgba(10, 10, 12, 0.98);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 24px;
+  z-index: 999;
+}
+
+.mobile-menu.open {
+  display: block;
+}
+
+.mobile-menu a {
+  display: block;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+}
+
+.mobile-menu a:last-child {
+  border-bottom: none;
+}
+
+/* ============================================
+   2. HERO SECTION — THE CRIME SCENE
+   ============================================ */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 120px 24px 80px;
+  position: relative;
+  overflow: hidden;
+  /* Cork board texture via layered gradients */
+  background:
+    radial-gradient(ellipse at var(--mx) var(--my), rgba(212, 160, 64, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 20% 30%, rgba(40, 32, 20, 0.5) 0%, transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(35, 28, 18, 0.4) 0%, transparent 35%),
+    radial-gradient(circle at 60% 70%, rgba(38, 30, 22, 0.45) 0%, transparent 45%),
+    radial-gradient(circle at 10% 80%, rgba(42, 34, 24, 0.35) 0%, transparent 30%),
+    radial-gradient(circle at 90% 60%, rgba(36, 28, 20, 0.4) 0%, transparent 38%),
+    radial-gradient(circle at 45% 15%, rgba(30, 24, 16, 0.3) 0%, transparent 25%),
+    radial-gradient(circle at 75% 85%, rgba(44, 36, 26, 0.3) 0%, transparent 32%),
+    var(--bg-board);
+}
+
+.hero-content {
+  max-width: 800px;
+  position: relative;
+  z-index: 2;
+  margin-bottom: 60px;
+}
+
+.hero-headline {
+  font-family: var(--mono);
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  margin-bottom: 24px;
+  color: var(--text-primary);
+}
+
+.hero-headline .lying {
+  color: var(--red);
+  text-shadow: 0 0 30px var(--red-glow), 0 0 60px rgba(201, 64, 64, 0.2);
+}
+
+.hero-headline .typewriter-cursor {
+  display: inline-block;
+  width: 3px;
+  height: 0.9em;
+  background: var(--amber);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: typewriterBlink 1s infinite;
+}
+
+.hero-sub {
+  font-family: var(--sans);
+  font-size: 19px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  max-width: 600px;
+  margin: 0 auto 36px;
+}
+
+.hero-ctas {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--amber);
+  color: var(--bg-dark);
+  border: none;
+  padding: 14px 32px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(212, 160, 64, 0.3);
+  color: var(--bg-dark);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--amber);
+  border: 1px solid var(--amber);
+  padding: 14px 32px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+  text-decoration: none;
+}
+
+.btn-secondary:hover {
+  background: var(--amber);
+  color: var(--bg-dark);
+  transform: translateY(-2px);
+}
+
+/* ---- Evidence Cards Board ---- */
+.evidence-board {
+  position: relative;
+  max-width: 900px;
+  width: 100%;
+  height: 340px;
+  margin: 0 auto;
+}
+
+.evidence-board::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, var(--bg-board) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.evidence-card {
+  position: absolute;
+  width: 240px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 32px 16px 16px;
+  z-index: 2;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.evidence-card:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+/* Pushpin */
+.pushpin {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #e85050, var(--red) 50%, #8b2020);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.2);
+  z-index: 5;
+}
+
+.pushpin.visible {
+  animation: pushpinBounce 0.5s ease;
+}
+
+/* Tape strip */
+.tape-strip {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%) rotate(var(--tape-rotate, -2deg));
+  width: 60px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 4;
+  border-radius: 1px;
+}
+
+.card-1 {
+  top: 30px;
+  left: 20px;
+  transform: rotate(-2deg);
+}
+
+.card-2 {
+  top: 10px;
+  left: 50%;
+  margin-left: -120px;
+  transform: rotate(1.5deg);
+}
+
+.card-3 {
+  top: 40px;
+  right: 20px;
+  transform: rotate(-1deg);
+}
+
+.card-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.card-title {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+/* FLAKY stamp */
+.stamp {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--red);
+  border: 2px solid var(--red);
+  padding: 2px 10px;
+  transform: rotate(-8deg);
+  opacity: 0;
+}
+
+.stamp.visible {
+  animation: stampSlam 0.4s ease forwards;
+}
+
+/* Mini bar chart */
+.mini-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 50px;
+  margin-top: 8px;
+}
+
+.mini-bar {
+  flex: 1;
+  border-radius: 1px 1px 0 0;
+  min-width: 8px;
+}
+
+.mini-bar.pass {
+  background: var(--green);
+}
+
+.mini-bar.fail {
+  background: var(--red);
+}
+
+/* Circular gauge mini */
+.gauge-mini {
+  width: 64px;
+  height: 64px;
+  margin: 8px auto 0;
+  position: relative;
+}
+
+.gauge-mini svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.gauge-mini-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--red);
+}
+
+/* Red strings SVG overlay */
+.red-strings {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.red-strings line,
+.red-strings path {
+  stroke: var(--red);
+  stroke-width: 1.5;
+  opacity: 0.6;
+  fill: none;
+  stroke-dasharray: 500;
+  stroke-dashoffset: 500;
+}
+
+.red-strings line.animate,
+.red-strings path.animate {
+  animation: drawLine 2s ease forwards;
+}
+
+.red-strings circle {
+  fill: var(--red);
+  opacity: 0;
+}
+
+.red-strings circle.animate {
+  opacity: 0.8;
+  transition: opacity 0.3s ease 1.8s;
+}
+
+/* ============================================
+   3. CLOSED CASES — STATS
+   ============================================ */
+.stats-section {
+  border-top: 2px solid var(--amber-dim);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-dark);
+  padding: 60px 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  text-align: center;
+}
+
+.stat-item {
+  padding: 24px;
+}
+
+.stat-icon {
+  width: 32px;
+  height: 40px;
+  margin: 0 auto 16px;
+  opacity: 0.6;
+}
+
+.stat-number {
+  font-family: var(--mono);
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--amber);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+/* ============================================
+   4. THE INVESTIGATION — HOW IT WORKS
+   ============================================ */
+.investigation-section {
+  background: var(--bg-dark);
+}
+
+.investigation-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  position: relative;
+}
+
+.step-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 32px 20px 24px;
+  position: relative;
+  transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+.step-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--amber-dim);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--amber-dim);
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--amber);
+  color: var(--bg-dark);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 900;
+  border-radius: 50%;
+  margin-bottom: 16px;
+}
+
+.step-title {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.step-desc {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.step-icon {
+  width: 40px;
+  height: 40px;
+  opacity: 0.5;
+}
+
+/* Dashed connector lines */
+.step-connectors {
+  display: none;
+}
+
+/* ============================================
+   5. SUSPECT PROFILES
+   ============================================ */
+.suspects-section {
+  background: var(--bg-dark);
+}
+
+.suspects-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.suspect-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--suspect-accent, var(--red));
+  border-radius: 2px;
+  padding: 28px 24px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.suspect-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.suspect-card:hover .suspect-left-border-glow {
+  opacity: 1;
+}
+
+.suspect-left-border-glow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.suspect-stamp {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border: 2px solid;
+  transform: rotate(6deg);
+  opacity: 0;
+}
+
+.suspect-stamp.visible {
+  animation: stampSlam 0.4s ease forwards;
+}
+
+.suspect-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.suspect-icon-wrap {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+}
+
+.suspect-name {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.suspect-category {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+
+.suspect-desc {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+/* Mini visuals for suspect cards */
+.suspect-visual {
+  height: 48px;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+
+/* Timing bars */
+.timing-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 36px;
+  flex: 1;
+}
+
+.timing-bar {
+  flex: 1;
+  border-radius: 1px 1px 0 0;
+  background: var(--amber);
+  min-width: 12px;
+  position: relative;
+}
+
+.timing-bar.spike {
+  background: var(--red);
+}
+
+/* Pass/fail dots pattern */
+.pattern-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+}
+
+.pattern-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pattern-dot.pass-dot {
+  background: rgba(61, 153, 112, 0.2);
+  color: var(--green);
+  border: 1px solid var(--green);
+}
+
+.pattern-dot.fail-dot {
+  background: rgba(201, 64, 64, 0.2);
+  color: var(--red);
+  border: 1px solid var(--red);
+}
+
+/* Connected nodes */
+.nodes-visual {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+
+.node {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  position: relative;
+}
+
+.node.corrupt {
+  background: var(--red);
+  animation: nodeGlow 2s infinite;
+}
+
+.node-line {
+  width: 16px;
+  height: 1px;
+  background: var(--text-dim);
+}
+
+/* Stacked errors */
+.stacked-errors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.error-line {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  padding: 3px 8px;
+  background: rgba(74, 143, 212, 0.06);
+  border-left: 2px solid var(--blue);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.error-line:nth-child(2) {
+  color: var(--text-secondary);
+  border-left-color: var(--amber);
+  background: rgba(212, 160, 64, 0.06);
+}
+
+.error-line:nth-child(3) {
+  border-left-color: var(--red);
+  background: rgba(201, 64, 64, 0.06);
+}
+
+.error-line:nth-child(4) {
+  border-left-color: var(--purple);
+  background: rgba(124, 92, 191, 0.06);
+}
+
+/* ============================================
+   6. THE VERDICT — TRUST SCORE
+   ============================================ */
+.verdict-section {
+  background: var(--bg-dark);
+}
+
+.verdict-grid {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 60px;
+  align-items: start;
+}
+
+/* Trust Score Gauge */
+.gauge-container {
+  text-align: center;
+  padding: 40px 0;
+}
+
+.gauge-large {
+  width: 220px;
+  height: 220px;
+  margin: 0 auto 24px;
+  position: relative;
+}
+
+.gauge-large svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.gauge-large .gauge-bg {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 10;
+}
+
+.gauge-large .gauge-fill {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 440;
+  stroke-dashoffset: 440;
+  transition: stroke-dashoffset 2s ease;
+}
+
+.gauge-large .gauge-fill.animate {
+  stroke-dashoffset: 66;
+}
+
+.gauge-score {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-score-num {
+  font-family: var(--mono);
+  font-size: 52px;
+  font-weight: 700;
+  color: var(--green);
+  line-height: 1;
+}
+
+.gauge-score-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+.verdict-label {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+
+.verdict-label.trusted {
+  color: var(--green);
+}
+
+/* Evidence breakdown */
+.evidence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 20px;
+}
+
+.evidence-item {
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+.evidence-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+  border: 1px solid var(--amber-dim);
+  padding: 2px 8px;
+  margin-bottom: 10px;
+}
+
+.evidence-name {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.evidence-value {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.evidence-bar-track {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.evidence-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--green);
+  transition: width 1.5s ease;
+  width: 0;
+}
+
+.evidence-bar-fill.animate {
+  width: var(--bar-width, 50%);
+}
+
+.evidence-points {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  text-align: right;
+}
+
+.evidence-item.penalty {
+  border-color: var(--border-red);
+}
+
+.evidence-item.penalty .evidence-tag {
+  color: var(--red);
+  border-color: var(--border-red);
+}
+
+.evidence-item.penalty .evidence-value {
+  color: var(--red);
+}
+
+.evidence-item.penalty .evidence-bar-fill {
+  background: var(--red);
+}
+
+.verdict-total {
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 2px solid var(--amber-dim);
+  border-radius: 2px;
+  text-align: center;
+}
+
+.verdict-total-label {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.verdict-total-score {
+  font-family: var(--mono);
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--amber);
+}
+
+/* ============================================
+   7. CASE FILES — FEATURES GRID
+   ============================================ */
+.features-section {
+  background: var(--bg-dark);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.feature-folder {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 2px 2px 0 0;
+  position: relative;
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: default;
+}
+
+.feature-folder:hover {
+  transform: translateY(-4px) rotate(-0.5deg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.folder-tab {
+  background: var(--amber-dim);
+  color: var(--text-primary);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  display: inline-block;
+  border-radius: 2px 2px 0 0;
+  margin-left: 16px;
+  position: relative;
+  top: 0;
+}
+
+.folder-body {
+  padding: 24px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.folder-icon {
+  width: 32px;
+  height: 32px;
+  opacity: 0.6;
+}
+
+.folder-desc {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ============================================
+   8. OPEN YOUR CASE — SETUP CODE
+   ============================================ */
+.setup-section {
+  background: var(--bg-dark);
+}
+
+.code-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.code-tab {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+  border-radius: 2px 2px 0 0;
+  margin-right: 2px;
+}
+
+.code-tab.active {
+  color: var(--amber);
+  background: var(--bg-card);
+  border-color: var(--amber-dim);
+}
+
+.code-tab:hover {
+  color: var(--text-secondary);
+}
+
+.code-block-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0 2px 2px 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.code-block-label {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  padding: 2px 10px;
+  border-radius: 2px;
+  z-index: 2;
+}
+
+.code-copy-btn {
+  position: absolute;
+  top: 12px;
+  right: 100px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  z-index: 2;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.code-copy-btn:hover {
+  color: var(--amber);
+  border-color: var(--amber-dim);
+}
+
+.code-block {
+  padding: 48px 0 20px 0;
+  overflow-x: auto;
+  display: none;
+}
+
+.code-block.active {
+  display: block;
+}
+
+.code-line {
+  display: flex;
+  line-height: 1.7;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.code-line:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.line-num {
+  width: 48px;
+  text-align: right;
+  padding-right: 16px;
+  color: var(--text-dim);
+  user-select: none;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.line-content {
+  flex: 1;
+  white-space: pre;
+}
+
+/* Syntax highlighting classes */
+.syn-keyword { color: var(--amber); }
+.syn-string { color: var(--green); }
+.syn-comment { color: var(--text-dim); font-style: italic; }
+.syn-value { color: var(--blue); }
+.syn-plain { color: var(--text-secondary); }
+
+/* ============================================
+   9. SENTENCING — PRICING
+   ============================================ */
+.pricing-section {
+  background: var(--bg-dark);
+}
+
+.pricing-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 48px;
+}
+
+.pricing-toggle-label {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.pricing-toggle-label.active {
+  color: var(--amber);
+}
+
+.pricing-toggle-switch {
+  width: 48px;
+  height: 26px;
+  background: var(--border);
+  border-radius: 13px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.3s;
+  border: none;
+  padding: 0;
+}
+
+.pricing-toggle-switch.active {
+  background: var(--amber-dim);
+}
+
+.pricing-toggle-switch::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.3s;
+}
+
+.pricing-toggle-switch.active::after {
+  transform: translateX(22px);
+}
+
+.pricing-save {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--green);
+  letter-spacing: 0.05em;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.pricing-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 36px 28px;
+  position: relative;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.pricing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.pricing-card.featured {
+  border-color: var(--amber);
+  box-shadow: 0 0 40px rgba(212, 160, 64, 0.08);
+}
+
+.pricing-popular-stamp {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bg-dark);
+  background: var(--amber);
+  padding: 3px 10px;
+  transform: rotate(3deg);
+}
+
+.pricing-tier-name {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.pricing-subtitle {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  margin-bottom: 20px;
+}
+
+.pricing-price {
+  font-family: var(--mono);
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.pricing-price-period {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 24px;
+}
+
+.pricing-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.pricing-features li {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.4;
+}
+
+.pricing-features li svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.pricing-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 14px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  text-decoration: none;
+}
+
+.pricing-btn-primary {
+  background: var(--amber);
+  color: var(--bg-dark);
+  border: 1px solid var(--amber);
+}
+
+.pricing-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(212, 160, 64, 0.3);
+  color: var(--bg-dark);
+}
+
+.pricing-btn-secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.pricing-btn-secondary:hover {
+  border-color: var(--text-dim);
+  color: var(--text-primary);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   10. CROSS-EXAMINATION — FAQ
+   ============================================ */
+.faq-section {
+  background: var(--bg-dark);
+}
+
+.faq-list {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.faq-item {
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+
+.faq-item.open {
+  border-color: var(--amber-dim);
+}
+
+.faq-question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 20px 24px;
+  background: var(--bg-card);
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+  gap: 16px;
+}
+
+.faq-question:hover {
+  background: rgba(28, 26, 36, 0.8);
+}
+
+.faq-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  position: relative;
+  transition: transform 0.3s;
+}
+
+.faq-item.open .faq-icon {
+  transform: rotate(45deg);
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease;
+  padding: 0 24px;
+  background: var(--bg-card);
+}
+
+.faq-item.open .faq-answer {
+  max-height: 300px;
+  padding: 0 24px 20px;
+}
+
+.faq-answer p {
+  font-family: var(--sans);
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+/* ============================================
+   11. FINAL VERDICT — CTA
+   ============================================ */
+.cta-section {
+  padding: 120px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at center, rgba(212, 160, 64, 0.08) 0%, transparent 60%),
+    var(--bg-dark);
+}
+
+.cta-section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--amber),
+    var(--amber) 14px,
+    var(--bg-dark) 14px,
+    var(--bg-dark) 28px
+  );
+  background-size: 56px 56px;
+  animation: policeLine 2s linear infinite;
+}
+
+.cta-headline {
+  font-family: var(--mono);
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.cta-sub {
+  font-family: var(--sans);
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin-bottom: 36px;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.cta-note {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 16px;
+  letter-spacing: 0.03em;
+}
+
+/* ============================================
+   12. FOOTER
+   ============================================ */
+.footer {
+  padding: 48px 24px;
+  border-top: 2px solid var(--amber-dim);
+  background: var(--bg-dark);
+  position: relative;
+}
+
+.footer-stamp {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border: 3px solid var(--text-dim);
+  padding: 6px 20px;
+  transform: rotate(-6deg);
+  opacity: 0.5;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.footer-logo svg {
+  width: 18px;
+  height: 18px;
+}
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.footer-links a {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover {
+  color: var(--text-primary);
+}
+
+.footer-credit {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1024px) {
+  .investigation-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .verdict-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+  .nav-mobile-toggle {
+    display: block;
+  }
+  .hero-headline {
+    font-size: 32px;
+  }
+  .hero-sub {
+    font-size: 16px;
+  }
+  .evidence-board {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 40px 0;
+  }
+  .evidence-card {
+    position: relative;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    margin-left: 0 !important;
+    width: 280px;
+  }
+  .red-strings {
+    display: none;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .investigation-grid {
+    grid-template-columns: 1fr;
+  }
+  .suspects-grid {
+    grid-template-columns: 1fr;
+  }
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  .cta-headline {
+    font-size: 28px;
+  }
+  .footer-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+  .footer-stamp {
+    position: relative;
+    top: auto;
+    right: auto;
+    transform: none;
+    margin-bottom: 24px;
+  }
+  .code-block-wrap {
+    overflow-x: auto;
+  }
+}
+
+.hidden-mobile {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .hidden-mobile {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-headline {
+    font-size: 26px;
+  }
+  .stat-number {
+    font-size: 36px;
+  }
+  .hero-ctas {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================
+     1. NAVIGATION
+     ============================================ -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      POLY
+    </a>
+    <ul class="nav-links">
+      <li><a href="#cases">Cases</a></li>
+      <li><a href="#investigation">Investigation</a></li>
+      <li><a href="#verdict">Verdict</a></li>
+      <li><a href="#dossiers">Dossiers</a></li>
+      <li><a href="#setup" class="nav-cta">Open Case</a></li>
+    </ul>
+    <button class="nav-mobile-toggle" id="mobileToggle" aria-label="Toggle menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#cases">Cases</a>
+    <a href="#investigation">Investigation</a>
+    <a href="#verdict">Verdict</a>
+    <a href="#dossiers">Dossiers</a>
+    <a href="#setup">Open Case</a>
+  </div>
+</nav>
+
+<!-- ============================================
+     2. HERO SECTION — THE CRIME SCENE
+     ============================================ -->
+<section class="hero" id="hero">
+  <div class="hero-content">
+    <h1 class="hero-headline">
+      <span id="heroTypewriter"></span><span class="typewriter-cursor"></span>
+    </h1>
+    <p class="hero-sub">
+      Every flaky test is a suspect. Poly investigates, gathers evidence, and delivers the verdict.
+    </p>
+    <div class="hero-ctas">
+      <a href="#setup" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 21l-5.2-5.2"/><circle cx="10" cy="10" r="7"/></svg>
+        Open Investigation
+      </a>
+      <a href="https://github.com/Pritahi/poly-core" class="btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        View on GitHub
+      </a>
+    </div>
+  </div>
+
+  <!-- Evidence Cards Board -->
+  <div class="evidence-board" id="evidenceBoard">
+    <!-- SVG Red Strings Overlay -->
+    <svg class="red-strings" id="redStrings" viewBox="0 0 900 340">
+      <path class="red-string" d="M 140 80 Q 300 20 450 60" />
+      <path class="red-string" d="M 450 60 Q 600 100 740 90" />
+      <path class="red-string" d="M 260 220 Q 450 180 650 240" />
+      <!-- Connection dots -->
+      <circle class="red-dot" cx="140" cy="80" r="4" />
+      <circle class="red-dot" cx="450" cy="60" r="4" />
+      <circle class="red-dot" cx="740" cy="90" r="4" />
+      <circle class="red-dot" cx="260" cy="220" r="4" />
+      <circle class="red-dot" cx="650" cy="240" r="4" />
+    </svg>
+
+    <!-- Card 1: Suspect -->
+    <div class="evidence-card card-1 reveal">
+      <div class="tape-strip" style="--tape-rotate: -3deg;"></div>
+      <div class="pushpin"></div>
+      <div class="card-label">Suspect File #001</div>
+      <div class="card-title">test_api_response_time</div>
+      <div style="margin-top:8px;">
+        <span class="stamp" data-stamp>FLAKY</span>
+      </div>
+      <div style="margin-top:12px;">
+        <span class="card-label">Last 12 runs</span>
+        <div class="mini-bars">
+          <div class="mini-bar fail" style="height:100%"></div>
+          <div class="mini-bar pass" style="height:80%"></div>
+          <div class="mini-bar fail" style="height:90%"></div>
+          <div class="mini-bar pass" style="height:70%"></div>
+          <div class="mini-bar pass" style="height:75%"></div>
+          <div class="mini-bar fail" style="height:95%"></div>
+          <div class="mini-bar pass" style="height:60%"></div>
+          <div class="mini-bar fail" style="height:85%"></div>
+          <div class="mini-bar pass" style="height:65%"></div>
+          <div class="mini-bar pass" style="height:72%"></div>
+          <div class="mini-bar fail" style="height:88%"></div>
+          <div class="mini-bar pass" style="height:78%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Evidence -->
+    <div class="evidence-card card-2 reveal reveal-delay-1">
+      <div class="tape-strip" style="--tape-rotate: 2deg;"></div>
+      <div class="pushpin"></div>
+      <div class="card-label">Evidence Log</div>
+      <div class="card-title">Failed 7 of 12 runs</div>
+      <div style="margin-top:8px; font-family: var(--sans); font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+        Failure rate: <span style="color:var(--red); font-weight:600;">58.3%</span><br>
+        Avg pass duration: 201ms<br>
+        Avg fail duration: 12.4s<br>
+        Z-score anomaly: <span style="color:var(--amber); font-weight:600;">4.7</span>
+      </div>
+    </div>
+
+    <!-- Card 3: Verdict -->
+    <div class="evidence-card card-3 reveal reveal-delay-2">
+      <div class="tape-strip" style="--tape-rotate: -1deg;"></div>
+      <div class="pushpin"></div>
+      <div class="card-label">Trust Assessment</div>
+      <div class="card-title">Trust Score 42/100</div>
+      <div class="gauge-mini">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="var(--border)" stroke-width="8"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="var(--red)" stroke-width="8"
+            stroke-dasharray="251.2" stroke-dashoffset="145.7" stroke-linecap="round"
+            class="gauge-mini-fill"/>
+        </svg>
+        <div class="gauge-mini-label">42</div>
+      </div>
+      <div style="text-align:center; font-family:var(--mono); font-size:10px; color:var(--red); letter-spacing:0.1em; text-transform:uppercase; margin-top:6px;">Verdict: Suspect</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     3. CLOSED CASES — STATS
+     ============================================ -->
+<section class="stats-section" id="cases">
+  <div class="container">
+    <div class="section-title reveal" style="text-align:center; margin-bottom:40px;">Closed Cases</div>
+    <div class="stats-grid">
+      <div class="stat-item reveal">
+        <div class="stat-icon">
+          <svg viewBox="0 0 32 40" fill="none" stroke="var(--amber)" stroke-width="1.5">
+            <path d="M4 2h18v4H4z"/>
+            <rect x="6" y="6" width="14" height="30" rx="1"/>
+            <line x1="10" y1="12" x2="16" y2="12"/>
+            <line x1="10" y1="16" x2="16" y2="16"/>
+            <line x1="10" y1="20" x2="14" y2="20"/>
+          </svg>
+        </div>
+        <div class="stat-number" data-count="47" data-suffix="%">0%</div>
+        <div class="stat-label">of developers waste 2+ hours/week chasing ghosts</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-1">
+        <div class="stat-icon">
+          <svg viewBox="0 0 32 40" fill="none" stroke="var(--amber)" stroke-width="1.5">
+            <circle cx="16" cy="14" r="10"/>
+            <line x1="16" y1="4" x2="16" y2="14"/>
+            <line x1="16" y1="14" x2="22" y2="20"/>
+            <rect x="10" y="26" width="12" height="10" rx="2"/>
+          </svg>
+        </div>
+        <div class="stat-number" data-count="61" data-prefix="$" data-suffix="M">$0M</div>
+        <div class="stat-label">annual cost of flaky tests for mid-size companies</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-2">
+        <div class="stat-icon">
+          <svg viewBox="0 0 32 40" fill="none" stroke="var(--amber)" stroke-width="1.5">
+            <rect x="6" y="4" width="20" height="32" rx="2"/>
+            <line x1="6" y1="12" x2="26" y2="12"/>
+            <line x1="10" y1="8" x2="22" y2="8"/>
+            <circle cx="16" cy="24" r="4"/>
+          </svg>
+        </div>
+        <div class="stat-number" data-count="5" data-suffix=" runs">0 runs</div>
+        <div class="stat-label">all Poly needs to identify a suspect</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     4. THE INVESTIGATION — HOW IT WORKS
+     ============================================ -->
+<section class="investigation-section" id="investigation">
+  <div class="container">
+    <div class="section-title reveal">The Investigation</div>
+    <div class="section-subtitle reveal">Four steps. One verdict.</div>
+    <div class="investigation-grid">
+      <!-- Step 1 -->
+      <div class="step-card reveal">
+        <div class="pushpin" style="top:-6px;"></div>
+        <div class="step-number">1</div>
+        <div class="step-title">Collect Evidence</div>
+        <div class="step-desc">Connect your CI in one line. Poly captures every test run, duration, and error.</div>
+        <svg class="step-icon" viewBox="0 0 40 40" fill="none" stroke="var(--text-dim)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 6h28v4H4z"/>
+          <rect x="6" y="10" width="24" height="26" rx="1"/>
+          <line x1="11" y1="17" x2="25" y2="17"/>
+          <line x1="11" y1="22" x2="25" y2="22"/>
+          <line x1="11" y1="27" x2="20" y2="27"/>
+        </svg>
+      </div>
+      <!-- Step 2 -->
+      <div class="step-card reveal reveal-delay-1">
+        <div class="pushpin" style="top:-6px;"></div>
+        <div class="step-number">2</div>
+        <div class="step-title">Analyze Patterns</div>
+        <div class="step-desc">Bayesian scoring, z-score anomaly detection, sequential analysis. No guesswork.</div>
+        <svg class="step-icon" viewBox="0 0 40 40" fill="none" stroke="var(--text-dim)" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="18" cy="18" r="12"/>
+          <line x1="27" y1="27" x2="36" y2="36"/>
+          <line x1="14" y1="14" x2="22" y2="22"/>
+          <line x1="22" y1="14" x2="14" y2="22"/>
+        </svg>
+      </div>
+      <!-- Step 3 -->
+      <div class="step-card reveal reveal-delay-2">
+        <div class="pushpin" style="top:-6px;"></div>
+        <div class="step-number">3</div>
+        <div class="step-title">Identify Suspects</div>
+        <div class="step-desc">4 flaky categories: timing, order dependency, shared state, non-deterministic data.</div>
+        <svg class="step-icon" viewBox="0 0 40 40" fill="none" stroke="var(--text-dim)" stroke-width="1.5" stroke-linecap="round">
+          <!-- Fingerprint arcs -->
+          <path d="M12 32 C12 18, 28 18, 28 32"/>
+          <path d="M15 32 C15 22, 25 22, 25 32"/>
+          <path d="M18 32 C18 25, 22 25, 22 32"/>
+          <line x1="20" y1="8" x2="20" y2="32"/>
+        </svg>
+      </div>
+      <!-- Step 4 -->
+      <div class="step-card reveal reveal-delay-3">
+        <div class="pushpin" style="top:-6px;"></div>
+        <div class="step-number">4</div>
+        <div class="step-title">Deliver Verdict</div>
+        <div class="step-desc">Trust Score 0-100 on every test. PR comments. Dashboard. Alerts. Case closed.</div>
+        <svg class="step-icon" viewBox="0 0 40 40" fill="none" stroke="var(--text-dim)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Gavel -->
+          <rect x="10" y="4" width="14" height="8" rx="2" transform="rotate(-15, 17, 8)"/>
+          <line x1="17" y1="12" x2="24" y2="28"/>
+          <line x1="6" y1="32" x2="34" y2="32"/>
+          <rect x="8" y="30" width="24" height="4" rx="1"/>
+        </svg>
+      </div>
+    </div>
+    <!-- Dashed connector lines (visible on desktop) -->
+    <svg style="display:block; margin:-20px auto 0; max-width:100%; overflow:visible;" height="40" viewBox="0 0 1100 40" class="hidden-mobile">
+      <line x1="275" y1="20" x2="530" y2="20" stroke="var(--red)" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.4"/>
+      <line x1="575" y1="20" x2="830" y2="20" stroke="var(--red)" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.4"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ============================================
+     5. SUSPECT PROFILES
+     ============================================ -->
+<section class="suspects-section" id="suspects">
+  <div class="container">
+    <div class="section-title reveal">Suspect Profiles</div>
+    <div class="section-subtitle reveal">Know your enemies.</div>
+    <div class="suspects-grid">
+      <!-- Card 1: Time Bandit -->
+      <div class="suspect-card reveal" style="--suspect-accent: var(--amber);">
+        <div class="suspect-stamp" data-stamp style="color:var(--amber); border-color:var(--amber);">Most Wanted</div>
+        <div class="suspect-header">
+          <div class="suspect-icon-wrap">
+            <svg viewBox="0 0 44 44" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round">
+              <circle cx="22" cy="22" r="16"/>
+              <line x1="22" y1="10" x2="22" y2="22"/>
+              <line x1="22" y1="22" x2="30" y2="26"/>
+              <!-- Crack -->
+              <path d="M18 8 L20 14 L17 16 L19 20" stroke-width="1" opacity="0.6"/>
+              <path d="M28 12 L26 16 L29 18 L27 22" stroke-width="1" opacity="0.4"/>
+            </svg>
+          </div>
+          <div>
+            <div class="suspect-name" style="color:var(--amber);">The Time Bandit</div>
+            <div class="suspect-category">Timing / Race Conditions</div>
+          </div>
+        </div>
+        <div class="suspect-desc">Times out erratically. Sometimes 200ms, sometimes 30 seconds. Race conditions and timeout issues.</div>
+        <div class="suspect-visual">
+          <div class="timing-bars">
+            <div class="timing-bar" style="height:30%"></div>
+            <div class="timing-bar" style="height:35%"></div>
+            <div class="timing-bar spike" style="height:95%"></div>
+            <div class="timing-bar" style="height:25%"></div>
+            <div class="timing-bar" style="height:40%"></div>
+            <div class="timing-bar spike" style="height:88%"></div>
+            <div class="timing-bar" style="height:30%"></div>
+            <div class="timing-bar" style="height:32%"></div>
+            <div class="timing-bar spike" style="height:100%"></div>
+            <div class="timing-bar" style="height:28%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Order Mole -->
+      <div class="suspect-card reveal reveal-delay-1" style="--suspect-accent: var(--purple);">
+        <div class="suspect-stamp" data-stamp style="color:var(--purple); border-color:var(--purple);">Case File</div>
+        <div class="suspect-header">
+          <div class="suspect-icon-wrap">
+            <svg viewBox="0 0 44 44" fill="none" stroke="var(--purple)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 22 L16 22"/>
+              <path d="M16 22 L12 18"/>
+              <path d="M16 22 L12 26"/>
+              <path d="M28 22 L36 22"/>
+              <path d="M28 22 L32 18"/>
+              <path d="M28 22 L32 26"/>
+              <path d="M20 14 L24 14"/>
+              <path d="M20 30 L24 30"/>
+              <path d="M22 12 L22 16"/>
+              <path d="M22 28 L22 32"/>
+            </svg>
+          </div>
+          <div>
+            <div class="suspect-name" style="color:var(--purple);">The Order Mole</div>
+            <div class="suspect-category">Order Dependency</div>
+          </div>
+        </div>
+        <div class="suspect-desc">Passes when run alone, fails when grouped. Depends on execution order. A saboteur hiding in your suite.</div>
+        <div class="suspect-visual">
+          <div class="pattern-dots">
+            <div class="pattern-dot pass-dot">P</div>
+            <div class="pattern-dot fail-dot">F</div>
+            <div class="pattern-dot pass-dot">P</div>
+            <div class="pattern-dot fail-dot">F</div>
+            <div class="pattern-dot pass-dot">P</div>
+            <div class="pattern-dot fail-dot">F</div>
+            <div class="pattern-dot pass-dot">P</div>
+            <div class="pattern-dot fail-dot">F</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: State Corruptor -->
+      <div class="suspect-card reveal reveal-delay-2" style="--suspect-accent: var(--red);">
+        <div class="suspect-stamp" data-stamp style="color:var(--red); border-color:var(--red);">Most Wanted</div>
+        <div class="suspect-header">
+          <div class="suspect-icon-wrap">
+            <svg viewBox="0 0 44 44" fill="none" stroke="var(--red)" stroke-width="1.5" stroke-linecap="round">
+              <ellipse cx="22" cy="16" rx="14" ry="6"/>
+              <path d="M8 16v12c0 3.3 6.3 6 14 6s14-2.7 14-6V16"/>
+              <path d="M8 22c0 3.3 6.3 6 14 6s14-2.7 14-6"/>
+              <!-- Crack -->
+              <path d="M16 12 L18 18 L15 20 L17 24" stroke-width="1" opacity="0.7"/>
+            </svg>
+          </div>
+          <div>
+            <div class="suspect-name" style="color:var(--red);">The State Corruptor</div>
+            <div class="suspect-category">Shared State</div>
+          </div>
+        </div>
+        <div class="suspect-desc">Shares state across tests. Corrupts data silently. Intermittent failures that look real but aren't.</div>
+        <div class="suspect-visual">
+          <div class="nodes-visual">
+            <div class="node"></div>
+            <div class="node-line"></div>
+            <div class="node"></div>
+            <div class="node-line"></div>
+            <div class="node corrupt"></div>
+            <div class="node-line"></div>
+            <div class="node"></div>
+            <div class="node-line"></div>
+            <div class="node"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Random Actor -->
+      <div class="suspect-card reveal reveal-delay-3" style="--suspect-accent: var(--blue);">
+        <div class="suspect-stamp" data-stamp style="color:var(--blue); border-color:var(--blue);">Case File</div>
+        <div class="suspect-header">
+          <div class="suspect-icon-wrap">
+            <svg viewBox="0 0 44 44" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <!-- Dice -->
+              <rect x="10" y="10" width="24" height="24" rx="3"/>
+              <circle cx="17" cy="17" r="1.5" fill="var(--blue)"/>
+              <circle cx="27" cy="17" r="1.5" fill="var(--blue)"/>
+              <circle cx="17" cy="27" r="1.5" fill="var(--blue)"/>
+              <circle cx="27" cy="27" r="1.5" fill="var(--blue)"/>
+              <!-- Question mark -->
+              <text x="22" y="24" text-anchor="middle" font-family="var(--mono)" font-size="10" font-weight="700" fill="var(--blue)" stroke="none">?</text>
+            </svg>
+          </div>
+          <div>
+            <div class="suspect-name" style="color:var(--blue);">The Random Actor</div>
+            <div class="suspect-category">Non-Deterministic Data</div>
+          </div>
+        </div>
+        <div class="suspect-desc">Different error every time. Unpredictable. External data, random values, non-deterministic logic.</div>
+        <div class="suspect-visual" style="align-items:stretch;">
+          <div class="stacked-errors">
+            <div class="error-line">AssertionError: expected 42, got undefined</div>
+            <div class="error-line">TimeoutError: request exceeded 5000ms</div>
+            <div class="error-line">TypeError: Cannot read property 'id' of null</div>
+            <div class="error-line">ConnectionRefused: port 5432 already in use</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     6. THE VERDICT — TRUST SCORE
+     ============================================ -->
+<section class="verdict-section" id="verdict">
+  <div class="container">
+    <div class="section-title reveal">The Verdict</div>
+    <div class="section-subtitle reveal">Every test gets its day in court.</div>
+    <div class="verdict-grid">
+      <!-- Left: Gauge -->
+      <div class="gauge-container reveal">
+        <div class="gauge-large" id="trustGauge">
+          <svg viewBox="0 0 160 160">
+            <circle class="gauge-bg" cx="80" cy="80" r="70"/>
+            <circle class="gauge-fill" id="gaugeFill" cx="80" cy="80" r="70"
+              stroke-dasharray="440" stroke-dashoffset="440"/>
+          </svg>
+          <div class="gauge-score">
+            <div class="gauge-score-num" id="gaugeScoreNum">0</div>
+            <div class="gauge-score-label">Trust Score</div>
+          </div>
+        </div>
+        <div class="verdict-label trusted" id="verdictLabel">Verdict: Mostly Trusted</div>
+      </div>
+
+      <!-- Right: Evidence breakdown -->
+      <div class="evidence-list">
+        <div class="evidence-item reveal">
+          <div class="evidence-tag">Exhibit A</div>
+          <div class="evidence-name">Pass Rate (55% weight)</div>
+          <div class="evidence-value">92% pass rate across 48 runs</div>
+          <div class="evidence-bar-track">
+            <div class="evidence-bar-fill" style="--bar-width:92%;"></div>
+          </div>
+          <div class="evidence-points">50.6 points</div>
+        </div>
+        <div class="evidence-item reveal reveal-delay-1">
+          <div class="evidence-tag">Exhibit B</div>
+          <div class="evidence-name">Recent Trend (20% weight)</div>
+          <div class="evidence-value">+8% improving over last 10 runs</div>
+          <div class="evidence-bar-track">
+            <div class="evidence-bar-fill" style="--bar-width:88%;"></div>
+          </div>
+          <div class="evidence-points">17.6 points</div>
+        </div>
+        <div class="evidence-item reveal reveal-delay-2">
+          <div class="evidence-tag">Exhibit C</div>
+          <div class="evidence-name">Duration Stability (10% weight)</div>
+          <div class="evidence-value">96% stable, low coefficient of variation</div>
+          <div class="evidence-bar-track">
+            <div class="evidence-bar-fill" style="--bar-width:96%;"></div>
+          </div>
+          <div class="evidence-points">9.4 points</div>
+        </div>
+        <div class="evidence-item reveal reveal-delay-3">
+          <div class="evidence-tag">Exhibit D</div>
+          <div class="evidence-name">Error Consistency (10% weight)</div>
+          <div class="evidence-value">88% consistent error type when failing</div>
+          <div class="evidence-bar-track">
+            <div class="evidence-bar-fill" style="--bar-width:88%;"></div>
+          </div>
+          <div class="evidence-points">8.8 points</div>
+        </div>
+        <div class="evidence-item penalty reveal">
+          <div class="evidence-tag">Penalty</div>
+          <div class="evidence-name">Timing Category Flag</div>
+          <div class="evidence-value">Classified as timing-related flakiness</div>
+          <div class="evidence-bar-track">
+            <div class="evidence-bar-fill" style="--bar-width:16%;"></div>
+          </div>
+          <div class="evidence-points" style="color:var(--red);">-8.0 points</div>
+        </div>
+        <div class="verdict-total reveal">
+          <div class="verdict-total-label">Final Verdict</div>
+          <div class="verdict-total-score">78.4 / 100</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     7. CASE FILES — FEATURES GRID
+     ============================================ -->
+<section class="features-section" id="dossiers">
+  <div class="container">
+    <div class="section-title reveal">Case Files</div>
+    <div class="section-subtitle reveal">Everything you need to investigate, prosecute, and close your flaky test cases.</div>
+    <div class="features-grid">
+      <div class="feature-folder reveal">
+        <div class="folder-tab">GitHub Action</div>
+        <div class="folder-body">
+          <svg class="folder-icon" viewBox="0 0 32 32" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="16" cy="16" r="6"/>
+            <path d="M2 16h4M26 16h4M16 2v4M16 26v4"/>
+          </svg>
+          <div class="folder-desc">One line in your workflow. Automatic flaky detection on every push and PR.</div>
+        </div>
+      </div>
+      <div class="feature-folder reveal reveal-delay-1">
+        <div class="folder-tab">Python SDK</div>
+        <div class="folder-body">
+          <svg class="folder-icon" viewBox="0 0 32 32" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="10,28 10,12 22,4 22,20"/>
+            <line x1="10" y1="28" x2="22" y2="20"/>
+          </svg>
+          <div class="folder-desc">Programmatic access. Submit results, query scores, build custom integrations.</div>
+        </div>
+      </div>
+      <div class="feature-folder reveal reveal-delay-2">
+        <div class="folder-tab">PR Comments</div>
+        <div class="folder-body">
+          <svg class="folder-icon" viewBox="0 0 32 32" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round">
+            <path d="M6 4h20a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H14l-6 6v-6H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
+            <line x1="10" y1="11" x2="22" y2="11"/>
+            <line x1="10" y1="16" x2="18" y2="16"/>
+          </svg>
+          <div class="folder-desc">Automatic PR comments with Trust Scores for every changed test. Reviewers see the evidence.</div>
+        </div>
+      </div>
+      <div class="feature-folder reveal reveal-delay-3">
+        <div class="folder-tab">Dashboard</div>
+        <div class="folder-body">
+          <svg class="folder-icon" viewBox="0 0 32 32" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round">
+            <rect x="2" y="2" width="28" height="28" rx="3"/>
+            <line x1="2" y1="10" x2="30" y2="10"/>
+            <line x1="10" y1="10" x2="10" y2="30"/>
+            <rect x="14" y="14" width="6" height="8" rx="1"/>
+            <rect x="22" y="14" width="6" height="4" rx="1"/>
+          </svg>
+          <div class="folder-desc">Full overview of your test suite health. Trend analysis, worst offenders, category breakdowns.</div>
+        </div>
+      </div>
+      <div class="feature-folder reveal">
+        <div class="folder-tab">Trust Badges</div>
+        <div class="folder-body">
+          <svg class="folder-icon" viewBox="0 0 32 32" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 2l3.5 7 7.5 1.1-5.4 5.3 1.3 7.4L16 19.8 9.1 22.8l1.3-7.4L5 10.1l7.5-1.1z"/>
+          </svg>
+          <div class="folder-desc">Shield badges in your README showing suite trust score. Proof of quality for open source.</div>
+        </div>
+      </div>
+      <div class="feature-folder reveal reveal-delay-1">
+        <div class="folder-tab">Slack Alerts</div>
+        <div class="folder-body">
+          <svg class="folder-icon" viewBox="0 0 32 32" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 18c0 2.2 1.8 4 4 4h12c2.2 0 4-1.8 4-4V14c0-2.2-1.8-4-4-4H8c-2.2 0-4 1.8-4 4z"/>
+            <circle cx="12" cy="14" r="2"/>
+            <circle cx="20" cy="14" r="2"/>
+            <path d="M10 6c0-1.1.9-2 2-2h8c1.1 0 2 .9 2 2"/>
+          </svg>
+          <div class="folder-desc">Get notified when new suspects are identified or Trust Scores drop below thresholds.</div>
+        </div>
+      </div>
+      <div class="feature-folder reveal reveal-delay-2">
+        <div class="folder-tab">4 Categories</div>
+        <div class="folder-body">
+          <svg class="folder-icon" viewBox="0 0 32 32" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round">
+            <rect x="4" y="4" width="10" height="10" rx="2"/>
+            <rect x="18" y="4" width="10" height="10" rx="2"/>
+            <rect x="4" y="18" width="10" height="10" rx="2"/>
+            <rect x="18" y="18" width="10" height="10" rx="2"/>
+          </svg>
+          <div class="folder-desc">Timing, Order Dependency, Shared State, Non-Deterministic Data. Know exactly what type of flake you have.</div>
+        </div>
+      </div>
+      <div class="feature-folder reveal reveal-delay-3">
+        <div class="folder-tab">Self-Hosted</div>
+        <div class="folder-body">
+          <svg class="folder-icon" viewBox="0 0 32 32" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round">
+            <rect x="4" y="6" width="24" height="18" rx="2"/>
+            <line x1="10" y1="26" x2="22" y2="26"/>
+            <line x1="16" y1="24" x2="16" y2="26"/>
+            <circle cx="16" cy="15" r="4"/>
+            <path d="M14 13l-2 4h4"/>
+          </svg>
+          <div class="folder-desc">Deploy on your infrastructure. One click to Railway or run anywhere with Python 3.8+.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     8. OPEN YOUR CASE — SETUP CODE
+     ============================================ -->
+<section class="setup-section" id="setup">
+  <div class="container">
+    <div class="section-title reveal">Open Your Case</div>
+    <div class="section-subtitle reveal">Connect your CI pipeline in seconds. Poly starts investigating immediately.</div>
+
+    <div class="code-tabs reveal">
+      <button class="code-tab active" data-tab="github-action">GitHub Action</button>
+      <button class="code-tab" data-tab="python-sdk">Python SDK</button>
+      <button class="code-tab" data-tab="rest-api">REST API</button>
+    </div>
+
+    <div class="code-block-wrap reveal">
+      <div class="code-block-label">Case Note</div>
+      <button class="code-copy-btn" data-copy="github-action">Copy</button>
+
+      <!-- GitHub Action -->
+      <div class="code-block active" id="tab-github-action">
+        <div class="code-line"><span class="line-num">1</span><span class="line-content"><span class="syn-keyword">name</span><span class="syn-plain">: </span><span class="syn-string">CI Investigation</span></span></div>
+        <div class="code-line"><span class="line-num">2</span><span class="line-content"><span class="syn-keyword">on</span><span class="syn-plain">: [</span><span class="syn-string">push</span><span class="syn-plain">, </span><span class="syn-string">pull_request</span><span class="syn-plain">]</span></span></div>
+        <div class="code-line"><span class="line-num">3</span><span class="line-content"><span class="syn-keyword">jobs</span><span class="syn-plain">:</span></span></div>
+        <div class="code-line"><span class="line-num">4</span><span class="line-content"><span class="syn-plain">  </span><span class="syn-keyword">test</span><span class="syn-plain">:</span></span></div>
+        <div class="code-line"><span class="line-num">5</span><span class="line-content"><span class="syn-plain">    </span><span class="syn-keyword">runs-on</span><span class="syn-plain">: </span><span class="syn-string">ubuntu-latest</span></span></div>
+        <div class="code-line"><span class="line-num">6</span><span class="line-content"><span class="syn-plain">    </span><span class="syn-keyword">steps</span><span class="syn-plain">:</span></span></div>
+        <div class="code-line"><span class="line-num">7</span><span class="line-content"><span class="syn-plain">      - </span><span class="syn-keyword">uses</span><span class="syn-plain">: </span><span class="syn-string">actions/checkout@v4</span></span></div>
+        <div class="code-line"><span class="line-num">8</span><span class="line-content"><span class="syn-plain">      - </span><span class="syn-keyword">run</span><span class="syn-plain">: </span><span class="syn-string">npm test -- --reporter junit</span></span></div>
+        <div class="code-line"><span class="line-num">9</span><span class="line-content"><span class="syn-plain">      - </span><span class="syn-keyword">uses</span><span class="syn-plain">: </span><span class="syn-string">Pritahi/poly-action@v1</span></span></div>
+        <div class="code-line"><span class="line-num">10</span><span class="line-content"><span class="syn-plain">        </span><span class="syn-keyword">with</span><span class="syn-plain">:</span></span></div>
+        <div class="code-line"><span class="line-num">11</span><span class="line-content"><span class="syn-plain">          </span><span class="syn-keyword">api_key</span><span class="syn-plain">: </span><span class="syn-value">${{ secrets.POLY_API_KEY }}</span></span></div>
+        <div class="code-line"><span class="line-num">12</span><span class="line-content"><span class="syn-plain">          </span><span class="syn-keyword">junit_path</span><span class="syn-plain">: </span><span class="syn-string">'test-results/*.xml'</span></span></div>
+      </div>
+
+      <!-- Python SDK -->
+      <div class="code-block" id="tab-python-sdk">
+        <div class="code-line"><span class="line-num">1</span><span class="line-content"><span class="syn-keyword">from</span><span class="syn-plain"> poly </span><span class="syn-keyword">import</span><span class="syn-plain"> PolyClient</span></span></div>
+        <div class="code-line"><span class="line-num">2</span><span class="line-content"></span></div>
+        <div class="code-line"><span class="line-num">3</span><span class="line-content"><span class="syn-comment"># Initialize the investigation</span></span></div>
+        <div class="code-line"><span class="line-num">4</span><span class="line-content"><span class="syn-plain">client = PolyClient(</span><span class="syn-keyword">api_key</span><span class="syn-plain">=</span><span class="syn-string">"your-api-key"</span><span class="syn-plain">)</span></span></div>
+        <div class="code-line"><span class="line-num">5</span><span class="line-content"></span></div>
+        <div class="code-line"><span class="line-num">6</span><span class="line-content"><span class="syn-comment"># Submit test results for analysis</span></span></div>
+        <div class="code-line"><span class="line-num">7</span><span class="line-content"><span class="syn-plain">result = client.submit_junit(</span></span></div>
+        <div class="code-line"><span class="line-num">8</span><span class="line-content"><span class="syn-plain">    </span><span class="syn-keyword">repo</span><span class="syn-plain">=</span><span class="syn-string">"myorg/myrepo"</span><span class="syn-plain">,</span></span></div>
+        <div class="code-line"><span class="line-num">9</span><span class="line-content"><span class="syn-plain">    </span><span class="syn-keyword">branch</span><span class="syn-plain">=</span><span class="syn-string">"main"</span><span class="syn-plain">,</span></span></div>
+        <div class="code-line"><span class="line-num">10</span><span class="line-content"><span class="syn-plain">    </span><span class="syn-keyword">junit_path</span><span class="syn-plain">=</span><span class="syn-string">"test-results/junit.xml"</span></span></div>
+        <div class="code-line"><span class="line-num">11</span><span class="line-content"><span class="syn-plain">)</span></span></div>
+        <div class="code-line"><span class="line-num">12</span><span class="line-content"></span></div>
+        <div class="code-line"><span class="line-num">13</span><span class="line-content"><span class="syn-comment"># Get the verdict for each test</span></span></div>
+        <div class="code-line"><span class="line-num">14</span><span class="line-content"><span class="syn-keyword">for</span><span class="syn-plain"> test </span><span class="syn-keyword">in</span><span class="syn-plain"> result.suspects:</span></span></div>
+        <div class="code-line"><span class="line-num">15</span><span class="line-content"><span class="syn-plain">    </span><span class="syn-keyword">print</span><span class="syn-plain">(f</span><span class="syn-string">"{test.name}: {test.trust_score}/100"</span><span class="syn-plain">)</span></span></div>
+      </div>
+
+      <!-- REST API -->
+      <div class="code-block" id="tab-rest-api">
+        <div class="code-line"><span class="line-num">1</span><span class="line-content"><span class="syn-comment"># Submit test results via REST API</span></span></div>
+        <div class="code-line"><span class="line-num">2</span><span class="line-content"><span class="syn-keyword">curl</span><span class="syn-plain"> -X POST </span><span class="syn-value">https://api.poly.dev/v1/results</span><span class="syn-plain"> \</span></span></div>
+        <div class="code-line"><span class="line-num">3</span><span class="line-content"><span class="syn-plain">  -H </span><span class="syn-string">"Authorization: Bearer $POLY_API_KEY"</span><span class="syn-plain"> \</span></span></div>
+        <div class="code-line"><span class="line-num">4</span><span class="line-content"><span class="syn-plain">  -H </span><span class="syn-string">"Content-Type: multipart/form-data"</span><span class="syn-plain"> \</span></span></div>
+        <div class="code-line"><span class="line-num">5</span><span class="line-content"><span class="syn-plain">  -F </span><span class="syn-string">"repo=myorg/myrepo"</span><span class="syn-plain"> \</span></span></div>
+        <div class="code-line"><span class="line-num">6</span><span class="line-content"><span class="syn-plain">  -F </span><span class="syn-string">"branch=main"</span><span class="syn-plain"> \</span></span></div>
+        <div class="code-line"><span class="line-num">7</span><span class="line-content"><span class="syn-plain">  -F </span><span class="syn-string">"commit=abc123def"</span><span class="syn-plain"> \</span></span></div>
+        <div class="code-line"><span class="line-num">8</span><span class="line-content"><span class="syn-plain">  -F </span><span class="syn-string">"file=@junit.xml"</span></span></div>
+        <div class="code-line"><span class="line-num">9</span><span class="line-content"></span></div>
+        <div class="code-line"><span class="line-num">10</span><span class="line-content"><span class="syn-comment"># Response: { "id": "res_abc123", "suspects": 3, "status": "analyzed" }</span></span></div>
+        <div class="code-line"><span class="line-num">11</span><span class="line-content"></span></div>
+        <div class="code-line"><span class="line-num">12</span><span class="line-content"><span class="syn-comment"># Query trust scores</span></span></div>
+        <div class="code-line"><span class="line-num">13</span><span class="line-content"><span class="syn-keyword">curl</span><span class="syn-plain"> </span><span class="syn-value">https://api.poly.dev/v1/scores/myorg/myrepo</span><span class="syn-plain"> \</span></span></div>
+        <div class="code-line"><span class="line-num">14</span><span class="line-content"><span class="syn-plain">  -H </span><span class="syn-string">"Authorization: Bearer $POLY_API_KEY"</span></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     9. SENTENCING — PRICING
+     ============================================ -->
+<section class="pricing-section" id="pricing">
+  <div class="container">
+    <div class="section-title reveal">Sentencing</div>
+    <div class="section-subtitle reveal" style="margin-left:auto; margin-right:auto; text-align:center;">Choose your plan. Every tier includes flaky detection.</div>
+
+    <div class="pricing-toggle reveal">
+      <span class="pricing-toggle-label active" id="monthlyLabel">Monthly</span>
+      <button class="pricing-toggle-switch" id="pricingToggle" aria-label="Toggle annual pricing"></button>
+      <span class="pricing-toggle-label" id="annualLabel">Annual</span>
+      <span class="pricing-save">Save 20%</span>
+    </div>
+
+    <div class="pricing-grid">
+      <!-- Free -->
+      <div class="pricing-card reveal">
+        <div class="pricing-tier-name">Light Sentence</div>
+        <div class="pricing-subtitle">Free</div>
+        <div class="pricing-price" data-monthly="0" data-annual="0">$0</div>
+        <div class="pricing-price-period">/month</div>
+        <ul class="pricing-features">
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            1 Repository
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            500 CI runs/month
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            Dashboard access
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            PR comments
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            Trust Badges
+          </li>
+        </ul>
+        <a href="#" class="pricing-btn pricing-btn-secondary">Start Free</a>
+      </div>
+
+      <!-- Pro (Featured) -->
+      <div class="pricing-card featured reveal reveal-delay-1">
+        <div class="pricing-popular-stamp">Most Popular</div>
+        <div class="pricing-tier-name">Standard Probation</div>
+        <div class="pricing-subtitle">Pro</div>
+        <div class="pricing-price" data-monthly="9" data-annual="7">$9</div>
+        <div class="pricing-price-period">/month</div>
+        <ul class="pricing-features">
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            Unlimited Repositories
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            Unlimited CI runs
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            Priority Support
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            Custom Alerts (Slack, email)
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            Full API Access
+          </li>
+        </ul>
+        <a href="#" class="pricing-btn pricing-btn-primary">Start Pro Trial</a>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="pricing-card reveal reveal-delay-2">
+        <div class="pricing-tier-name">Rehabilitation Program</div>
+        <div class="pricing-subtitle">Enterprise</div>
+        <div class="pricing-price">Custom</div>
+        <div class="pricing-price-period">tailored to your team</div>
+        <ul class="pricing-features">
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            On-Premise Deploy
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            SLA Guarantee
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            Dedicated Support
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            Custom Integrations
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="3,8 6.5,11.5 13,4.5"/></svg>
+            Compliance & Audit Logs
+          </li>
+        </ul>
+        <a href="#" class="pricing-btn pricing-btn-secondary">Contact Sales</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     10. CROSS-EXAMINATION — FAQ
+     ============================================ -->
+<section class="faq-section" id="faq">
+  <div class="container">
+    <div class="section-title reveal">Cross-Examination</div>
+    <div class="section-subtitle reveal" style="margin-left:auto; margin-right:auto; text-align:center;">Frequently asked questions. No perjury.</div>
+    <div class="faq-list">
+      <div class="faq-item reveal">
+        <button class="faq-question" aria-expanded="false">
+          <span>How is this different from just checking if a test fails?</span>
+          <svg class="faq-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="10" y1="4" x2="10" y2="16"/>
+            <line x1="4" y1="10" x2="16" y2="10"/>
+          </svg>
+        </button>
+        <div class="faq-answer">
+          <p>Poly doesn't just see pass/fail. It analyzes patterns across runs — timing anomalies, error consistency, sequential patterns, and environment correlation. A test that fails 50% of the time isn't "broken" — it's "flaky". Poly knows the difference.</p>
+        </div>
+      </div>
+      <div class="faq-item reveal reveal-delay-1">
+        <button class="faq-question" aria-expanded="false">
+          <span>What test frameworks do you support?</span>
+          <svg class="faq-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="10" y1="4" x2="10" y2="16"/>
+            <line x1="4" y1="10" x2="16" y2="10"/>
+          </svg>
+        </button>
+        <div class="faq-answer">
+          <p>Any framework that outputs JUnit XML: Jest, pytest, Mocha, JUnit, Go testing, .NET, and more. If it produces JUnit XML, Poly can analyze it.</p>
+        </div>
+      </div>
+      <div class="faq-item reveal reveal-delay-2">
+        <button class="faq-question" aria-expanded="false">
+          <span>How many runs before Poly detects a flaky test?</span>
+          <svg class="faq-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="10" y1="4" x2="10" y2="16"/>
+            <line x1="4" y1="10" x2="16" y2="10"/>
+          </svg>
+        </button>
+        <div class="faq-answer">
+          <p>As few as 2-3 runs for obvious cases. For subtle flakiness, 5-8 runs. Our Bayesian algorithm gets more confident with more data, but starts providing value immediately.</p>
+        </div>
+      </div>
+      <div class="faq-item reveal reveal-delay-3">
+        <button class="faq-question" aria-expanded="false">
+          <span>Is my test data secure?</span>
+          <svg class="faq-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="10" y1="4" x2="10" y2="16"/>
+            <line x1="4" y1="10" x2="16" y2="10"/>
+          </svg>
+        </button>
+        <div class="faq-answer">
+          <p>Yes. Self-hosted option means your data never leaves your infrastructure. Cloud option encrypts everything at rest and in transit.</p>
+        </div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-question" aria-expanded="false">
+          <span>Can I self-host Poly?</span>
+          <svg class="faq-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="10" y1="4" x2="10" y2="16"/>
+            <line x1="4" y1="10" x2="16" y2="10"/>
+          </svg>
+        </button>
+        <div class="faq-answer">
+          <p>Absolutely. Deploy to Railway with one click, or run on any server with Python 3.8+. Your data, your rules.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     11. FINAL VERDICT — CTA
+     ============================================ -->
+<section class="cta-section">
+  <div class="container">
+    <h2 class="cta-headline reveal">Stop Letting Flaky Tests Walk Free.</h2>
+    <p class="cta-sub reveal">Open your first investigation in 30 seconds. Free for open source.</p>
+    <div class="reveal">
+      <a href="#setup" class="btn-primary" style="font-size:16px; padding:18px 48px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 21l-5.2-5.2"/><circle cx="10" cy="10" r="7"/></svg>
+        Start Investigation
+      </a>
+    </div>
+    <p class="cta-note reveal">No credit card required. Your tests are already suspects.</p>
+  </div>
+</section>
+
+<!-- ============================================
+     12. FOOTER
+     ============================================ -->
+<footer class="footer">
+  <div class="footer-stamp">Case Closed</div>
+  <div class="footer-inner">
+    <a href="#" class="footer-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      POLY
+    </a>
+    <ul class="footer-links">
+      <li><a href="#">Documentation</a></li>
+      <li><a href="https://github.com/Pritahi/poly-core">GitHub</a></li>
+      <li><a href="#">Discord</a></li>
+    </ul>
+    <div class="footer-credit">Built by Pritahi</div>
+  </div>
+</footer>
+
+<!-- ============================================
+     JAVASCRIPT
+     ============================================ -->
+<script>
+(function() {
+  'use strict';
+
+  // ==========================================
+  // 1. MOUSE-FOLLOWING SPOTLIGHT (Hero)
+  // ==========================================
+  const hero = document.getElementById('hero');
+  if (hero) {
+    hero.addEventListener('mousemove', function(e) {
+      const rect = hero.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      hero.style.setProperty('--mx', x + '%');
+      hero.style.setProperty('--my', y + '%');
+    });
+  }
+
+  // ==========================================
+  // 2. TYPEWRITER EFFECT (Hero headline)
+  // ==========================================
+  const typewriterEl = document.getElementById('heroTypewriter');
+  const fullText = 'Catch the Test That\'s\nLying to Your CI.';
+  let charIndex = 0;
+
+  function typeWriter() {
+    if (charIndex <= fullText.length) {
+      let current = fullText.substring(0, charIndex);
+      // Wrap "Lying" in a span when we reach it
+      const lyingIndex = current.indexOf('Lying');
+      if (lyingIndex !== -1) {
+        const beforeLying = current.substring(0, lyingIndex);
+        const lyingAndAfter = current.substring(lyingIndex);
+        const lyingEnd = lyingAndAfter.indexOf(' ') !== -1 ? lyingAndAfter.indexOf(' ') + lyingIndex + 5 : lyingAndAfter.length + lyingIndex;
+        if (charIndex >= lyingIndex + 5) {
+          // Check if we've passed the full "Lying" word
+          const endOfLying = lyingIndex + 5;
+          current = current.substring(0, lyingIndex) +
+            '<span class="lying">Lying</span>' +
+            current.substring(endOfLying);
+        }
+      }
+      // Replace newlines with <br>
+      current = current.replace(/\n/g, '<br>');
+      typewriterEl.innerHTML = current;
+      charIndex++;
+      setTimeout(typeWriter, 45 + Math.random() * 30);
+    }
+  }
+  setTimeout(typeWriter, 600);
+
+  // ==========================================
+  // 3. SCROLL REVEAL (IntersectionObserver)
+  // ==========================================
+  const revealElements = document.querySelectorAll('.reveal');
+  const revealObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        // Trigger stamp animations within
+        const stamps = entry.target.querySelectorAll('[data-stamp]');
+        stamps.forEach(function(stamp) {
+          setTimeout(function() { stamp.classList.add('visible'); }, 400);
+        });
+        // Trigger pushpin animations
+        const pins = entry.target.querySelectorAll('.pushpin');
+        pins.forEach(function(pin) {
+          setTimeout(function() { pin.classList.add('visible'); }, 200);
+        });
+        // Trigger gauge animation
+        if (entry.target.id === 'trustGauge' || entry.target.querySelector('#gaugeFill')) {
+          setTimeout(animateGauge, 300);
+        }
+        // Trigger evidence bars
+        const bars = entry.target.querySelectorAll('.evidence-bar-fill');
+        bars.forEach(function(bar) {
+          setTimeout(function() { bar.classList.add('animate'); }, 500);
+        });
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+  revealElements.forEach(function(el) {
+    revealObserver.observe(el);
+  });
+
+  // ==========================================
+  // 4. RED STRING DRAW-IN ANIMATION
+  // ==========================================
+  setTimeout(function() {
+    const strings = document.querySelectorAll('.red-string');
+    strings.forEach(function(s, i) {
+      setTimeout(function() {
+        s.classList.add('animate');
+      }, i * 400);
+    });
+    const dots = document.querySelectorAll('.red-dot');
+    setTimeout(function() {
+      dots.forEach(function(d) { d.classList.add('animate'); });
+    }, 1800);
+  }, 800);
+
+  // ==========================================
+  // 5. COUNT-UP ANIMATION (Stats)
+  // ==========================================
+  const statNumbers = document.querySelectorAll('.stat-number[data-count]');
+  const countObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const target = parseInt(el.getAttribute('data-count'), 10);
+        const prefix = el.getAttribute('data-prefix') || '';
+        const suffix = el.getAttribute('data-suffix') || '';
+        animateCount(el, 0, target, 1500, prefix, suffix);
+        countObserver.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  statNumbers.forEach(function(el) { countObserver.observe(el); });
+
+  function animateCount(el, start, end, duration, prefix, suffix) {
+    const startTime = performance.now();
+    function update(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(start + (end - start) * eased);
+      el.textContent = prefix + current + suffix;
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      }
+    }
+    requestAnimationFrame(update);
+  }
+
+  // ==========================================
+  // 6. TRUST SCORE GAUGE ANIMATION
+  // ==========================================
+  function animateGauge() {
+    const gaugeFill = document.getElementById('gaugeFill');
+    const gaugeScoreNum = document.getElementById('gaugeScoreNum');
+    if (!gaugeFill) return;
+
+    const score = 85;
+    // circumference = 2 * PI * 70 = ~440
+    const circumference = 440;
+    const targetOffset = circumference - (circumference * score / 100);
+    gaugeFill.style.strokeDashoffset = targetOffset;
+    gaugeFill.classList.add('animate');
+
+    // Animate the number
+    animateCount(gaugeScoreNum, 0, score, 2000, '', '');
+    // Override to add /100 after animation
+    setTimeout(function() {
+      gaugeScoreNum.textContent = score + '/100';
+    }, 2100);
+  }
+
+  // ==========================================
+  // 7. NAV SCROLL EFFECT
+  // ==========================================
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > 40) {
+      nav.classList.add('scrolled');
+    } else {
+      nav.classList.remove('scrolled');
+    }
+  }, { passive: true });
+
+  // ==========================================
+  // 8. MOBILE MENU TOGGLE
+  // ==========================================
+  const mobileToggle = document.getElementById('mobileToggle');
+  const mobileMenu = document.getElementById('mobileMenu');
+  if (mobileToggle && mobileMenu) {
+    mobileToggle.addEventListener('click', function() {
+      mobileMenu.classList.toggle('open');
+    });
+    // Close menu on link click
+    mobileMenu.querySelectorAll('a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        mobileMenu.classList.remove('open');
+      });
+    });
+  }
+
+  // ==========================================
+  // 9. CODE TABS
+  // ==========================================
+  const codeTabs = document.querySelectorAll('.code-tab');
+  codeTabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      const targetId = 'tab-' + tab.getAttribute('data-tab');
+      // Deactivate all
+      codeTabs.forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.code-block').forEach(function(b) { b.classList.remove('active'); });
+      // Activate clicked
+      tab.classList.add('active');
+      const target = document.getElementById(targetId);
+      if (target) target.classList.add('active');
+      // Update copy button target
+      const copyBtn = document.querySelector('.code-copy-btn');
+      if (copyBtn) copyBtn.setAttribute('data-copy', tab.getAttribute('data-tab'));
+    });
+  });
+
+  // ==========================================
+  // 10. COPY BUTTON
+  // ==========================================
+  const copyBtn = document.querySelector('.code-copy-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', function() {
+      const tabId = copyBtn.getAttribute('data-copy');
+      const block = document.getElementById('tab-' + tabId);
+      if (!block) return;
+      // Extract plain text from lines
+      const lines = block.querySelectorAll('.line-content');
+      let text = '';
+      lines.forEach(function(line, i) {
+        text += line.textContent + '\n';
+      });
+      navigator.clipboard.writeText(text.trim()).then(function() {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(function() { copyBtn.textContent = 'Copy'; }, 2000);
+      }).catch(function() {
+        copyBtn.textContent = 'Failed';
+        setTimeout(function() { copyBtn.textContent = 'Copy'; }, 2000);
+      });
+    });
+  }
+
+  // ==========================================
+  // 11. PRICING TOGGLE
+  // ==========================================
+  const pricingToggle = document.getElementById('pricingToggle');
+  const monthlyLabel = document.getElementById('monthlyLabel');
+  const annualLabel = document.getElementById('annualLabel');
+  const priceEls = document.querySelectorAll('.pricing-price[data-monthly]');
+
+  if (pricingToggle) {
+    let isAnnual = false;
+    pricingToggle.addEventListener('click', function() {
+      isAnnual = !isAnnual;
+      pricingToggle.classList.toggle('active', isAnnual);
+      monthlyLabel.classList.toggle('active', !isAnnual);
+      annualLabel.classList.toggle('active', isAnnual);
+
+      priceEls.forEach(function(el) {
+        const monthly = el.getAttribute('data-monthly');
+        const annual = el.getAttribute('data-annual');
+        el.textContent = '$' + (isAnnual ? annual : monthly);
+      });
+    });
+  }
+
+  // ==========================================
+  // 12. FAQ ACCORDION
+  // ==========================================
+  const faqItems = document.querySelectorAll('.faq-item');
+  faqItems.forEach(function(item) {
+    const question = item.querySelector('.faq-question');
+    if (question) {
+      question.addEventListener('click', function() {
+        const isOpen = item.classList.contains('open');
+        // Close all
+        faqItems.forEach(function(i) {
+          i.classList.remove('open');
+          i.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+        });
+        // Toggle clicked
+        if (!isOpen) {
+          item.classList.add('open');
+          question.setAttribute('aria-expanded', 'true');
+        }
+      });
+    }
+  });
+
+})();
+</script>
+
+</body>
+</html>
