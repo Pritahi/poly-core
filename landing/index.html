@@ -85,8 +85,8 @@ body{ background:#FFFCF2; color:#121212; }
  <span class="hidden md:inline opacity-60">DISTRICT OF CONTINUOUS INTEGRATION • DIVISION CI/CD</span>
  </div>
  <div class="flex items-center gap-4">
- <span class="opacity-60 hidden md:inline">DOCKET • 04.17.2026</span>
- <span class="border border-gavel px-2 py-[2px]">CASE NO. #482</span>
+ <span class="opacity-60 hidden md:inline">DOCKET • 07.18.2026</span>
+ <span class="border border-gavel px-2 py-[2px]">CASE NO. #1001</span>
  </div>
  </div>
 
@@ -136,7 +136,7 @@ body{ background:#FFFCF2; color:#121212; }
  <!-- File Tab -->
  <div class="flex">
  <div class="bg-[#E8E0C9] border-[2.5px] border-gavel border-b-0 px-5 py-2 font-mono text-[11px] tracking-[0.16em] uppercase flex items-center gap-2">
- <span class="w-2 h-2 bg-verdict rounded-full"></span> Case File #482
+ <span class="w-2 h-2 bg-verdict rounded-full"></span> Case File #1001
  </div>
  <div class="ml-2 bg-wood h-[34px] px-4 flex items-center text-gold font-mono text-[10px] tracking-widest">CONFIDENTIAL</div>
  </div>
@@ -189,10 +189,10 @@ body{ background:#FFFCF2; color:#121212; }
  </div>
 
  <div class="flex flex-wrap items-center gap-3">
- <a href="/dashboard/" class="bg-gavel text-paper font-mono text-[12px] tracking-[0.15em] uppercase px-6 py-3.5 hover:bg-wood transition flex items-center gap-3">
+ <a href="/dashboard/index.html" class="bg-gavel text-paper font-mono text-[12px] tracking-[0.15em] uppercase px-6 py-3.5 hover:bg-wood transition flex items-center gap-3">
  <span>Enter Courtroom</span><span class="opacity-60">→</span>
  </a>
- <a href="/dashboard/guide.html" class="border-[2px] border-gavel bg-paper font-mono text-[12px] tracking-[0.15em] uppercase px-6 py-3 hover:bg-[#F0EAD6] transition">
+ <a href="/dashboard/index.html" class="border-[2px] border-gavel bg-paper font-mono text-[12px] tracking-[0.15em] uppercase px-6 py-3 hover:bg-[#F0EAD6] transition">
  View Evidence Log
  </a>
  <div class="font-stamp text-[11px] opacity-50 ml-2 hidden md:block">FILED: TODAY • NO BAIL</div>
@@ -300,10 +300,10 @@ body{ background:#FFFCF2; color:#121212; }
 
  <!-- Stats Mini -->
  <div class="grid grid-cols-4 gap-[2px] bg-gavel border-[2px] border-gavel">
- <div class="bg-paper p-3 text-center"><div class="font-serif font-bold text-[20px] leading-none">1203</div><div class="font-mono text-[8px] uppercase tracking-widest opacity-60 mt-1">Total Tests</div></div>
- <div class="bg-paper p-3 text-center"><div class="font-serif font-bold text-[20px] leading-none text-verdict">87</div><div class="font-mono text-[8px] uppercase tracking-widest opacity-60 mt-1">Flaky</div></div>
- <div class="bg-paper p-3 text-center"><div class="font-serif font-bold text-[20px] leading-none">14</div><div class="font-mono text-[8px] uppercase tracking-widest opacity-60 mt-1">Quarantined</div></div>
- <div class="bg-gold p-3 text-center"><div class="font-serif font-bold text-[20px] leading-none">81</div><div class="font-mono text-[8px] uppercase tracking-widest opacity-60 mt-1">Avg Trust</div></div>
+ <div class="bg-paper p-3 text-center"><div class="font-serif font-bold text-[20px] leading-none">2,847/div><div class="font-mono text-[8px] uppercase tracking-widest opacity-60 mt-1">Total Tests</div></div>
+ <div class="bg-paper p-3 text-center"><div class="font-serif font-bold text-[20px] leading-none text-verdict">142/div><div class="font-mono text-[8px] uppercase tracking-widest opacity-60 mt-1">Flaky</div></div>
+ <div class="bg-paper p-3 text-center"><div class="font-serif font-bold text-[20px] leading-none">23/div><div class="font-mono text-[8px] uppercase tracking-widest opacity-60 mt-1">Quarantined</div></div>
+ <div class="bg-gold p-3 text-center"><div class="font-serif font-bold text-[20px] leading-none">89</div><div class="font-mono text-[8px] uppercase tracking-widest opacity-60 mt-1">Avg Trust</div></div>
  </div>
  </div>
  </div>
@@ -412,9 +412,9 @@ body{ background:#FFFCF2; color:#121212; }
  <h3 class="font-serif font-bold text-[22px] leading-tight">AI Jury Deliberates</h3>
  <p class="font-mono text-[13px] leading-[1.6] opacity-70 mt-3 max-w-[520px]">Our model cross-examines duration variance, exit codes, stack trace entropy, and infra signals. It separates a real regression from a lying witness in milliseconds.</p>
  <div class="mt-5 flex flex-wrap gap-2">
- <span class="stamp text-verdict border-verdict px-2 py-1 text-[10px] rotate-[-3deg]">FLAKY • 87</span>
- <span class="stamp text-[#2E5A38] border-[#2E5A38] px-2 py-1 text-[10px] rotate-[2deg]">STABLE • 1102</span>
- <span class="stamp text-gold border-gold px-2 py-1 text-[10px] rotate-[-1deg]">QUARANTINED • 14</span>
+ <span class="stamp text-verdict border-verdict px-2 py-1 text-[10px] rotate-[-3deg]">FLAKY • 142</span>
+ <span class="stamp text-[#2E5A38] border-[#2E5A38] px-2 py-1 text-[10px] rotate-[2deg]">STABLE • 2705</span>
+ <span class="stamp text-gold border-gold px-2 py-1 text-[10px] rotate-[-1deg]">QUARANTINED • 23</span>
  </div>
  </div>
  </div>
@@ -498,7 +498,7 @@ body{ background:#FFFCF2; color:#121212; }
 
  <!-- Floating verdict -->
  <div class="absolute -bottom-6 -left-4 md:-left-8 stamp bg-paper text-gavel border-gavel px-4 py-2 rotate-[-6deg] text-[14px] shadow-[4px_4px_0px_#121212] hidden md:block">
- VERDICT ISSUED • TRUST: 81%
+ VERDICT ISSUED • TRUST: 89%
  </div>
  </div>
  </div>
@@ -513,7 +513,7 @@ body{ background:#FFFCF2; color:#121212; }
  <div class="flex items-center gap-4">
  <div class="font-serif font-[800] text-[28px] leading-none tracking-[-0.02em]">POLY</div>
  <div class="h-8 w-[1px] bg-gavel/20"></div>
- <div class="font-mono text-[10px] leading-tight opacity-60 uppercase tracking-widest">AI Flaky Test<br>Trust Layer • EST 2024<br>Case No 482 Jurisdiction</div>
+ <div class="font-mono text-[10px] leading-tight opacity-60 uppercase tracking-widest">AI Flaky Test<br>Trust Layer • EST 2024<br>Case No 1001 Jurisdiction</div>
  </div>
  <div class="flex items-center gap-3">
  <span class="font-mono text-[10px] tracking-widest uppercase opacity-60">Final Disposition</span>
