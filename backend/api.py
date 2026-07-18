@@ -80,13 +80,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # ===================== CONFIG =====================
 
@@ -97,7 +90,15 @@ SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
 SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
 SITE_URL = os.environ.get("SITE_URL", "")
 ALLOWED_ADMIN_EMAILS = os.environ.get("ALLOWED_ADMIN_EMAILS", "").split(",") if os.environ.get("ALLOWED_ADMIN_EMAILS") else []
-CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "https://falsky-test.vercel.app,http://localhost:3000,http://localhost:8000").split(",")
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "https://poly-core-bzndcs8ss-pritahis-projects.vercel.app,http://localhost:3000,http://localhost:8000").split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Rate limiting (in-memory, per-IP)
 _login_attempts = {}  # ip -> (count, first_attempt_time)
