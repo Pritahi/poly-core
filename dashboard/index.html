@@ -628,6 +628,12 @@ body {
       </svg>
       <span class="nav-label">Guide</span>
     </a>
+    <a href="/" class="nav-item" data-page="landing" style="margin-top:auto;border-top:1px solid var(--border);padding-top:14px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+      </svg>
+      <span class="nav-label">Home</span>
+    </a>
   </nav>
 </aside>
 
@@ -646,11 +652,34 @@ body {
     </div>
     <div class="auto-refresh">
       <div class="pulse-dot"></div>
+      <span id="liveClock">--:--:--</span>
+      <span style="margin:0 6px;color:var(--text-muted)">|</span>
       <span>Auto-refresh 30s</span>
     </div>
   </div>
 
-  <!-- Content -->
+  <!-- Live Ticker Bar -->
+  <div id="liveTicker" style="background:var(--surface);border-bottom:1px solid var(--border);padding:6px 0;overflow:hidden;font-family:var(--mono);font-size:11px;letter-spacing:0.05em;">
+    <div id="tickerTrack" style="display:flex;gap:32px;white-space:nowrap;animation:tickerScroll 40s linear infinite;color:var(--text-muted);">
+      <span>◆ POLY TRUST LAYER ACTIVE</span>
+      <span style="color:var(--green)">● SYSTEMS NOMINAL</span>
+      <span>◆ MONITORING ALL GATES</span>
+      <span style="color:var(--purple-light)" id="tickerTests">AWAITING TEST DATA...</span>
+      <span>◆ BAYESIAN SCORING ENGINE v2.0</span>
+      <span style="color:var(--green)">● REAL-TIME ANALYSIS</span>
+      <span>◆ FLAKY DETECTION: 14 PATTERNS</span>
+      <span style="color:var(--text-muted)">POLY TRUST LAYER ACTIVE</span>
+      <span>◆ SYSTEMS NOMINAL</span>
+      <span style="color:var(--green)">● MONITORING ALL GATES</span>
+      <span>◆ AWAITING TEST DATA...</span>
+      <span>◆ BAYESIAN SCORING ENGINE v2.0</span>
+      <span style="color:var(--green)">● REAL-TIME ANALYSIS</span>
+      <span>◆ FLAKY DETECTION: 14 PATTERNS</span>
+    </div>
+  </div>
+  <style>
+    @keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+  </style>
   <div class="content">
     <!-- No repo selected state -->
     <div class="no-repo" id="noRepo">
@@ -957,6 +986,14 @@ function renderDistribution(dist) {
 
   // Update flaky count
   $('sFlaky').textContent = total - h;
+
+  // Update live ticker with real data
+  const tickerEl = document.getElementById('tickerTests');
+  if (tickerEl && total > 0) {
+    const flakyPct = Math.round((total - h) / total * 100);
+    tickerEl.textContent = total + ' TESTS SCANNED | ' + (total - h) + ' FLAKY (' + flakyPct + '%) | TRUST: ' + Math.round(allStats?.avg_trust || 0) + '%';
+    tickerEl.style.color = flakyPct > 20 ? 'var(--orange)' : 'var(--green)';
+  }
 }
 
 // Render flaky tests table
@@ -1048,6 +1085,15 @@ async function loadQuarantine() {
     $('qBanner').style.display = 'none';
   }
 }
+
+// Live clock
+function updateLiveClock() {
+  const now = new Date();
+  document.getElementById('liveClock').textContent =
+    [now.getHours(), now.getMinutes(), now.getSeconds()].map(n => String(n).padStart(2,'0')).join(':');
+}
+setInterval(updateLiveClock, 1000);
+updateLiveClock();
 
 // Support ?repo= query param from back-navigation
 const urlRepo = new URLSearchParams(window.location.search).get('repo');
