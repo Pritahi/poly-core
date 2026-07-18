@@ -90,7 +90,7 @@ SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
 SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
 SITE_URL = os.environ.get("SITE_URL", "")
 ALLOWED_ADMIN_EMAILS = os.environ.get("ALLOWED_ADMIN_EMAILS", "").split(",") if os.environ.get("ALLOWED_ADMIN_EMAILS") else []
-CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "https://poly-core-bzndcs8ss-pritahis-projects.vercel.app,http://localhost:3000,http://localhost:8000").split(",")
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "https://poly-core-vercel.vercel.app,http://localhost:3000,http://localhost:8000").split(",")
 
 app.add_middleware(
     CORSMiddleware,
