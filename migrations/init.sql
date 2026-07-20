@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255),
     email VARCHAR(255) UNIQUE,
+    password_hash VARCHAR(255),
     github_username VARCHAR(255),
     api_key VARCHAR(255) UNIQUE,
     plan VARCHAR(50) DEFAULT 'free',
