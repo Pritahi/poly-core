@@ -560,17 +560,16 @@ _user_sessions = {}  # token -> {user_id, email, name}
 @app.post("/api/user/register")
 def user_register(data: UserRegister, request: Request, response: Response):
     try:
-        client = get_client()
         # Check if email exists
-        existing = select_one("users", "id", {"email": data.email})
-        if existing:
+        existing = _supabase_rest("users", filters={"email": data.email}, columns="id")
+        if existing and len(existing) > 0:
             raise HTTPException(status_code=400, detail="Email already registered")
         # Hash password
         pw_hash = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
         # Generate API key
         api_key = "fky_" + secrets.token_hex(20)
         # Insert user
-        user = insert("users", {
+        result = _supabase_rest("users", method="POST", data={
             "name": data.name,
             "email": data.email,
             "password_hash": pw_hash,
@@ -580,8 +579,9 @@ def user_register(data: UserRegister, request: Request, response: Response):
             "is_active": True,
             "signup_source": data.signup_source or "direct",
         })
-        if not user:
+        if not result or len(result) == 0:
             raise HTTPException(status_code=500, detail="Failed to create user")
+        user = result[0]
         # Create session
         token = secrets.token_hex(32)
         _user_sessions[token] = {"user_id": user["id"], "email": data.email, "name": data.name}
