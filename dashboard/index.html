@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TREMOR — Station Console FLK-01</title>
+<meta name="description" content="Falsky TREMOR — Station Console FLK-01. Real-time flaky test seismology dashboard.">
+<meta name="theme-color" content="#0C1517">
+<title>TREMOR — Station Console FLK-01 | Falsky</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 16'><polyline points='0,8 8,8 12,1 17,15 21,4 25,8 34,8' fill='none' stroke='%23FF4B2E' stroke-width='2.4'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -55,6 +58,7 @@ kbd{border:1px solid var(--line2);padding:1px 5px;font-family:var(--mono);font-s
 .led.red{background:var(--red);box-shadow:0 0 8px var(--red)}
 .led.amber{background:var(--amber);box-shadow:0 0 8px var(--amber)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}
 
 .mainwrap{display:flex;flex-direction:column;min-width:0;height:100vh}
 .topbar{height:64px;flex:none;display:flex;align-items:center;gap:18px;padding:0 26px;border-bottom:1px solid var(--line);background:rgba(12,21,23,.92);backdrop-filter:blur(6px)}
@@ -75,7 +79,8 @@ kbd{border:1px solid var(--line2);padding:1px 5px;font-family:var(--mono);font-s
 @keyframes viewIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
 /* ============ SHARED ============ */
-.panel{position:relative;background:var(--ink2);border:1px solid var(--line2);box-shadow:8px 8px 0 rgba(0,0,0,.4)}
+.panel{position:relative;background:var(--ink2);border:1px solid var(--line2);box-shadow:8px 8px 0 rgba(0,0,0,.4);transition:box-shadow .25s,transform .25s}
+.panel:hover{box-shadow:10px 10px 0 rgba(0,0,0,.45)}
 .screw{position:absolute;width:8px;height:8px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#4A6266,#141F22);z-index:3}
 .screw.tl{top:7px;left:7px}.screw.tr{top:7px;right:7px}.screw.bl{bottom:7px;left:7px}.screw.br{bottom:7px;right:7px}
 .phead{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;color:#9FB6B3}
@@ -97,8 +102,8 @@ kbd{border:1px solid var(--line2);padding:1px 5px;font-family:var(--mono);font-s
 .st-amber{color:var(--amber);border-color:var(--amber)}
 .st-green{color:var(--green);border-color:var(--green)}
 .hazard{height:10px;background:repeating-linear-gradient(-45deg,var(--amber) 0 13px,#171310 13px 26px)}
-.toast-zone{position:fixed;bottom:24px;right:24px;z-index:200;display:flex;flex-direction:column;gap:10px}
-.toast{background:var(--ink2);border:1px solid var(--line2);border-left:10px solid var(--amber);padding:14px 20px;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;color:var(--text);box-shadow:8px 8px 0 rgba(0,0,0,.5);animation:toastIn .3s ease;max-width:360px}
+.toast-zone{position:fixed;bottom:24px;right:24px;z-index:200;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.toast{pointer-events:auto;background:var(--ink2);border:1px solid var(--line2);border-left:10px solid var(--amber);padding:14px 20px;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;color:var(--text);box-shadow:8px 8px 0 rgba(0,0,0,.5);animation:toastIn .3s ease;max-width:360px}
 .toast.red{border-left-color:var(--red)}
 .toast.green{border-left-color:var(--green)}
 .toast.out{animation:toastOut .3s ease forwards}
@@ -234,6 +239,8 @@ input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--amber);border:2px solid #171310;box-shadow:0 0 0 1px var(--amber);cursor:grab}
 input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.15)}
 input[type=range]::-moz-range-thumb{width:14px;height:14px;background:var(--amber);border:2px solid #171310;border-radius:0;box-shadow:0 0 0 1px var(--amber);cursor:grab}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+::selection{background:var(--amber);color:#171310}
 .ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:7px;letter-spacing:.05em}
 .sel{position:relative;width:230px}
 .sel select,.tin{appearance:none;-webkit-appearance:none;width:100%;background:var(--ink3);border:1px solid var(--line2);color:var(--text);font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;padding:11px 34px 11px 12px;cursor:pointer;outline:none;transition:border-color .2s}
@@ -286,6 +293,11 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;background:var(--ambe
 </head>
 <body>
 <div class="grain"></div>
+<div id="loader" style="position:fixed;inset:0;z-index:9999;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;transition:opacity .5s ease">
+  <svg width="60" height="28" viewBox="0 0 34 16" fill="none"><polyline points="0,8 8,8 12,1 17,15 21,4 25,8 34,8" stroke="#FF4B2E" stroke-width="2.4"/><polyline points="0,8 8,8 12,1 17,15 21,4 25,8 34,8" stroke="#FFB020" stroke-width="1.2" stroke-dasharray="4 4" opacity=".5"><animate attributeName="stroke-dashoffset" from="0" to="-24" dur="1.2s" repeatCount="indefinite"/></polyline></svg>
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--dim)">INITIALIZING STATION…</div>
+</div>
+<script>setTimeout(()=>{const l=document.getElementById('loader');if(l){l.style.opacity='0';setTimeout(()=>l.remove(),500);}},800);</script>
 
 <div class="app">
   <!-- ============ SIDEBAR ============ -->
