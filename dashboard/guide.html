@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Poly — Court Procedure Manual</title>
+<title>Falsky — Court Procedure Manual</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,ital,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;0,6..72,800;1,6..72,400;1,6..72,600&family=Fragment+Mono&family=Special+Elite&display=swap" rel="stylesheet">
@@ -576,7 +576,7 @@ code {
 <!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <div class="sidebar-logo"><span>Poly</span></div>
+    <div class="sidebar-logo"><span>Falsky</span></div>
   </div>
   <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
     <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
@@ -620,13 +620,13 @@ code {
     <!-- Section 1: Quick Start -->
     <div class="guide-section" id="quick-start">
       <h2><span class="section-num">§1</span> Arraignment — Quick Start</h2>
-      <p>Get Poly running in your CI pipeline in under 2 minutes. Sign up, add the GitHub Action, and start seeing trust scores.</p>
+      <p>Get Falsky running in your CI pipeline in under 2 minutes. Sign up, add the GitHub Action, and start seeing trust scores.</p>
 
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-body">
           <h3>File Your Motion — Sign Up &amp; Get API Key</h3>
-          <p>Create an account at your Poly instance. You'll receive an API key to authenticate requests — your credentials to enter the courtroom.</p>
+          <p>Create an account at your Falsky instance. You'll receive an API key to authenticate requests — your credentials to enter the courtroom.</p>
         </div>
       </div>
 
@@ -645,7 +645,7 @@ code {
               </button>
             </div>
             <pre><span class="hl-comment"># .github/workflows/ci.yml</span>
-<span class="hl-kw">name</span><span class="hl-key">:</span> <span class="hl-str">CI with Poly</span>
+<span class="hl-kw">name</span><span class="hl-key">:</span> <span class="hl-str">CI with Falsky</span>
 <span class="hl-kw">on</span><span class="hl-key">:</span> <span class="hl-val">[push, pull_request]</span>
 
 <span class="hl-kw">jobs</span><span class="hl-key">:</span>
@@ -654,9 +654,9 @@ code {
     <span class="hl-kw">steps</span><span class="hl-key">:</span>
       - <span class="hl-kw">uses</span><span class="hl-key">:</span> <span class="hl-str">actions/checkout@v4</span>
       - <span class="hl-kw">run</span><span class="hl-key">:</span> <span class="hl-str">npm test -- --reporter junit --reporter-options output=test-results.xml</span>
-      - <span class="hl-kw">uses</span><span class="hl-key">:</span> <span class="hl-str">Pritahi/poly-action@v1</span>
+      - <span class="hl-kw">uses</span><span class="hl-key">:</span> <span class="hl-str">Pritahi/falsky-action@v1</span>
         <span class="hl-kw">with</span><span class="hl-key">:</span>
-          <span class="hl-kw">api_key</span><span class="hl-key">:</span> <span class="hl-val">${{ secrets.POLY_API_KEY }}</span>
+          <span class="hl-kw">api_key</span><span class="hl-key">:</span> <span class="hl-val">${{ secrets.FALSKY_API_KEY }}</span>
           <span class="hl-kw">junit_path</span><span class="hl-key">:</span> <span class="hl-str">'test-results/*.xml'</span></pre>
             <span class="affidavit-stamp">Affidavit Filed Under Oath</span>
           </div>
@@ -677,7 +677,7 @@ code {
             Copy
           </button>
         </div>
-        <pre>pip install poly-trust</pre>
+        <pre>pip install falsky-trust</pre>
         <span class="affidavit-stamp">Sworn &amp; Subscribed</span>
       </div>
 
@@ -689,10 +689,10 @@ code {
             Copy
           </button>
         </div>
-        <pre><span class="hl-kw">from</span> <span class="hl-func">poly</span> <span class="hl-kw">import</span> <span class="hl-func">Poly</span>
+        <pre><span class="hl-kw">from falsky import</span> <span class="hl-func">Falsky</span>
 
 <span class="hl-comment"># Initialize with your API key</span>
-<span class="hl-func">p</span> = <span class="hl-func">Poly</span>(<span class="hl-str">"your-api-key"</span>)
+<span class="hl-func">p</span> = <span class="hl-func">Falsky</span>(<span class="hl-str">"your-api-key"</span>)
 
 <span class="hl-comment"># Ingest a JUnit XML file</span>
 <span class="hl-func">result</span> = p.<span class="hl-func">ingest_junit</span>(<span class="hl-str">"path/to/junit.xml"</span>)
@@ -746,7 +746,7 @@ p.<span class="hl-func">configure_alerts</span>(
     <!-- Section 3: REST API -->
     <div class="guide-section" id="rest-api">
       <h2><span class="section-num">§3</span> REST API — Court Records Reference</h2>
-      <p>All endpoints require the <code>X-Poly-API-Key</code> header for write operations. Read operations (GET) are open by default — public record.</p>
+      <p>All endpoints require the <code>X-Falsky-API-Key</code> header for write operations. Read operations (GET) are open by default — public record.</p>
 
       <table class="api-table">
         <thead>
@@ -821,9 +821,9 @@ p.<span class="hl-func">configure_alerts</span>(
             Copy
           </button>
         </div>
-        <pre>curl -X POST https://your-poly-instance.com/api/junit \
+        <pre>curl -X POST https://your-falsky-instance.com/api/junit \
   -H <span class="hl-str">"Content-Type: application/json"</span> \
-  -H <span class="hl-str">"X-Poly-API-Key: your-key"</span> \
+  -H <span class="hl-str">"X-Falsky-API-Key: your-key"</span> \
   -d <span class="hl-str">'{"xml_content": "...", "repo_name": "my-repo", "branch": "main"}'</span></pre>
         <span class="affidavit-stamp">Filed Under Oath</span>
       </div>
@@ -836,7 +836,7 @@ p.<span class="hl-func">configure_alerts</span>(
             Copy
           </button>
         </div>
-        <pre>curl https://your-poly-instance.com/api/dashboard?repo_name=my-repo</pre>
+        <pre>curl https://your-falsky-instance.com/api/dashboard?repo_name=my-repo</pre>
         <span class="affidavit-stamp">Public Record</span>
       </div>
 
@@ -848,9 +848,9 @@ p.<span class="hl-func">configure_alerts</span>(
             Copy
           </button>
         </div>
-        <pre>curl -X POST https://your-poly-instance.com/api/alerts/config?repo_name=my-repo \
+        <pre>curl -X POST https://your-falsky-instance.com/api/alerts/config?repo_name=my-repo \
   -H <span class="hl-str">"Content-Type: application/json"</span> \
-  -H <span class="hl-str">"X-Poly-API-Key: your-key"</span> \
+  -H <span class="hl-str">"X-Falsky-API-Key: your-key"</span> \
   -d <span class="hl-str">'{"webhook_url": "https://discord.com/...", "channel_type": "discord"}'</span></pre>
         <span class="affidavit-stamp">Confidential Filing</span>
       </div>
@@ -953,7 +953,7 @@ p.<span class="hl-func">configure_alerts</span>(
             Copy
           </button>
         </div>
-        <pre><span class="hl-comment">![Trust Score](https://your-poly-instance.com/badge/your-repo)</span></pre>
+        <pre><span class="hl-comment">![Trust Score](https://your-falsky-instance.com/badge/your-repo)</span></pre>
         <span class="affidavit-stamp">Official Seal</span>
       </div>
 
@@ -962,7 +962,7 @@ p.<span class="hl-func">configure_alerts</span>(
         <img src="/badge/demo-repo" alt="Trust Score Badge" id="badgePreview"
              onerror="this.style.display='none'; document.getElementById('badgePlaceholder').style.display='inline-block';">
         <span id="badgePlaceholder" style="display:none;font-family:var(--mono);font-size:13px;color:var(--text-muted)">
-          Certificate will appear here when connected to a Poly instance
+          Certificate will appear here when connected to a Falsky instance
         </span>
       </div>
     </div>

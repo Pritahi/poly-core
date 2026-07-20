@@ -1,5 +1,5 @@
 """
-Poly — AI Flaky Test Trust Layer
+Falsky — AI Flaky Test Trust Layer
 Core Trust Engine v2.0: Production-ready flaky detection with Bayesian scoring,
 z-score anomaly detection, environment tracking, and sequential analysis.
 
@@ -20,7 +20,7 @@ from typing import Optional
 # Supabase SDK
 from engine.db import get_client, table, rpc, select, select_one, insert, update, delete, upsert
 
-logger = logging.getLogger("poly.engine")
+logger = logging.getLogger("falsky.engine")
 
 
 def _test_hash(test_name, repo_name):
@@ -642,10 +642,10 @@ def send_alert(repo_name: str, webhook_url: str, channel_type: str = "discord",
 
     if channel_type == "discord":
         embed = {
-            "title": f"Poly Alert — {repo_name}",
+            "title": f"Falsky Alert — {repo_name}",
             "color": 0x8B5CF6,
             "fields": [],
-            "footer": {"text": "Poly — AI Flaky Test Trust Layer"},
+            "footer": {"text": "Falsky — AI Flaky Test Trust Layer"},
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         if alert_data:
@@ -653,7 +653,7 @@ def send_alert(repo_name: str, webhook_url: str, channel_type: str = "discord",
                 embed["fields"].append({"name": key, "value": str(val), "inline": True})
         payload = {"embeds": [embed]}
     else:
-        blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": f"*Poly Alert — {repo_name}*\n" + "\n".join(f"*{k}*: {v}" for k, v in (alert_data or {}).items())}}]
+        blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": f"*Falsky Alert — {repo_name}*\n" + "\n".join(f"*{k}*: {v}" for k, v in (alert_data or {}).items())}}]
         payload = {"blocks": blocks}
 
     try:

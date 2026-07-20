@@ -1,5 +1,5 @@
 """
-Poly — Supabase SDK Database Layer
+Falsky — Supabase SDK Database Layer
 Replaces psycopg2 with supabase-py for serverless-friendly DB access.
 """
 
@@ -7,7 +7,7 @@ import os
 import logging
 from typing import Optional, Any
 
-logger = logging.getLogger("poly.db")
+logger = logging.getLogger("falsky.db")
 
 # Supabase client singleton
 _client = None

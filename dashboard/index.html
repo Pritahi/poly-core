@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Poly — Trust Dashboard</title>
+<title>Falsky — Trust Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,ital,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;0,6..72,800;1,6..72,400;1,6..72,600&family=Fragment+Mono&family=Special+Elite&display=swap" rel="stylesheet">
@@ -731,7 +731,7 @@ body::before {
 <!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <div class="sidebar-logo"><span>Poly</span></div>
+    <div class="sidebar-logo"><span>Falsky</span></div>
   </div>
   <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
     <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
@@ -793,14 +793,14 @@ body::before {
   <!-- Live Ticker Bar -->
   <div id="liveTicker" style="background:#E8E0C9;border-bottom:1.5px solid rgba(59,35,20,0.15);padding:6px 0;overflow:hidden;font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;">
     <div id="tickerTrack" style="display:flex;gap:32px;white-space:nowrap;animation:tickerScroll 40s linear infinite;color:var(--text-muted);">
-      <span>◆ POLY TRUST LAYER ACTIVE</span>
+      <span>◆ FALSKY TRUST LAYER ACTIVE</span>
       <span style="color:var(--green)">● SYSTEMS NOMINAL</span>
       <span>◆ MONITORING ALL GATES</span>
       <span style="color:var(--verdict)" id="tickerTests">AWAITING TEST DATA...</span>
       <span>◆ BAYESIAN SCORING ENGINE v2.0</span>
       <span style="color:var(--green)">● REAL-TIME ANALYSIS</span>
       <span>◆ FLAKY DETECTION: 14 PATTERNS</span>
-      <span style="color:var(--text-muted)">POLY TRUST LAYER ACTIVE</span>
+      <span style="color:var(--text-muted)">FALSKY TRUST LAYER ACTIVE</span>
       <span>◆ SYSTEMS NOMINAL</span>
       <span style="color:var(--green)">● MONITORING ALL GATES</span>
       <span>◆ AWAITING TEST DATA...</span>
@@ -978,7 +978,7 @@ body::before {
 
 <script>
 const API = window.location.origin;
-let currentRepo = localStorage.getItem('poly_repo') || '';
+let currentRepo = localStorage.getItem('falsky_repo') || '';
 let allFlakyTests = [];
 let searchFilter = '';
 
@@ -999,7 +999,7 @@ $('sidebarToggle').addEventListener('click', () => {
 // Repo selector
 $('repoSelect').addEventListener('change', e => {
   currentRepo = e.target.value;
-  localStorage.setItem('poly_repo', currentRepo);
+  localStorage.setItem('falsky_repo', currentRepo);
   loadDashboard();
 });
 
@@ -1247,7 +1247,7 @@ updateLiveClock();
 const urlRepo = new URLSearchParams(window.location.search).get('repo');
 if (urlRepo && !currentRepo) {
   currentRepo = urlRepo;
-  localStorage.setItem('poly_repo', currentRepo);
+  localStorage.setItem('falsky_repo', currentRepo);
 }
 
 // Initialize

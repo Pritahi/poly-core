@@ -1,4 +1,4 @@
--- Poly — Supabase RPC Functions
+-- Falsky — Supabase RPC Functions
 -- Run this AFTER init.sql in Supabase SQL Editor
 
 -- 1. Get dashboard stats for a repo

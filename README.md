@@ -1,8 +1,8 @@
-# Poly Core — AI Flaky Test Trust Layer (Backend)
+# Falsky Core — AI Flaky Test Trust Layer (Backend)
 
 Production-ready backend server that analyzes CI test runs and assigns **Trust Scores (0-100)** to every test. Uses Bayesian statistics, z-score anomaly detection, sequential pattern analysis, and environment-aware correlation to detect and categorize flaky tests.
 
-This is the **brain** of Poly. It receives test data, runs the algorithm, stores history, and serves the dashboard + admin panel.
+This is the **brain** of Falsky. It receives test data, runs the algorithm, stores history, and serves the dashboard + admin panel.
 
 ---
 
@@ -13,8 +13,8 @@ GitHub CI Pipeline
        │
        ▼
 ┌─────────────────┐      API Key       ┌──────────────────┐
-│  poly-action    │────────────────────▶│                  │
-│  (GitHub Action)│   JUnit XML +      │   poly-core      │
+│  falsky-action    │────────────────────▶│                  │
+│  (GitHub Action)│   JUnit XML +      │   falsky-core      │
 │                 │   repo metadata    │   (This Repo)    │
 └─────────────────┘                    │                  │
                                        │  ┌────────────┐  │
@@ -42,14 +42,14 @@ GitHub CI Pipeline
                                         PR Comment ◀──┘
 ```
 
-### How poly-action connects to poly-core:
+### How falsky-action connects to falsky-core:
 
-1. **User installs** `poly-action` in their GitHub repo's workflow
+1. **User installs** `falsky-action` in their GitHub repo's workflow
 2. **CI runs tests** → generates JUnit XML file
-3. **poly-action reads** the XML file and sends it to **poly-core's API** (`POST /api/junit`)
-4. **poly-core** runs the Trust Engine algorithm on the data
-5. **poly-core** returns trust scores + flaky categories back to poly-action
-6. **poly-action** posts a trust report as a **PR comment** on GitHub
+3. **falsky-action reads** the XML file and sends it to **falsky-core's API** (`POST /api/junit`)
+4. **falsky-core** runs the Trust Engine algorithm on the data
+5. **falsky-core** returns trust scores + flaky categories back to falsky-action
+6. **falsky-action** posts a trust report as a **PR comment** on GitHub
 7. User sees the report on their PR — flaky tests flagged with scores and categories
 
 ---
@@ -57,12 +57,12 @@ GitHub CI Pipeline
 ## What's Inside — File Descriptions
 
 ```
-poly-core/
+falsky-core/
 │
 ├── backend/
 │   └── api.py                  # FastAPI server (~520 lines) — THE MAIN ENTRY POINT
 │                               #   - Creates FastAPI app with all routes
-│                               #   - API key verification (X-Poly-API-Key header)
+│                               #   - API key verification (X-Falsky-API-Key header)
 │                               #   - Admin auth (cookie-based login/logout/session)
 │                               #   - 6 admin endpoints: login, logout, me, stats,
 │                               #     users CRUD (create/read/update/delete with search,
@@ -73,7 +73,7 @@ poly-core/
 │                               #   - Page routes: serves HTML files for landing,
 │                               #     dashboard, admin, test-detail, guide
 │                               #   - Startup event: initializes database
-│                               #   - Env vars: POLY_API_KEY, POLY_ADMIN_PASSWORD
+│                               #   - Env vars: FALSKY_API_KEY, FALSKY_ADMIN_PASSWORD
 │
 ├── engine/
 │   ├── __init__.py             # Package init — exports key functions
@@ -89,7 +89,7 @@ poly-core/
 │                               #     admin_users, users, user_activity
 │                               #   - Dashboard data aggregation functions
 │                               #   - Environment-aware correlation (cross-env pass rates)
-│                               #   - DB path configurable via POLY_DB_PATH env var
+│                               #   - DB path configurable via FALSKY_DB_PATH env var
 │                               #   - Seeds default admin user on first run
 │
 ├── dashboard/
@@ -241,7 +241,7 @@ The algorithm uses **5 signal components** to calculate a Trust Score (0-100):
 
 | Route | Description |
 |-------|-------------|
-| `/` | **Landing page** — Poly product page with features, pricing, CTA (Detective + Courtroom theme) |
+| `/` | **Landing page** — Falsky product page with features, pricing, CTA (Detective + Courtroom theme) |
 | `/docs` | FastAPI auto-generated Swagger API docs |
 | `/admin/` | Admin panel — user management, analytics, referral tracking (login: admin / admin123) |
 | `/dashboard/` | Test dashboard — repo stats, flaky tests table, CI runs |
@@ -256,8 +256,8 @@ The algorithm uses **5 signal components** to calculate a Trust Score (0-100):
 ### Step 1: Push to GitHub
 
 ```bash
-git clone https://github.com/Pritahi/poly-core.git
-cd poly-core
+git clone https://github.com/Pritahi/falsky-core.git
+cd falsky-core
 # Make your changes, then:
 git add . && git commit -m "your changes" && git push
 ```
@@ -266,24 +266,24 @@ git add . && git commit -m "your changes" && git push
 
 1. Go to [railway.app](https://railway.app) → Login with GitHub
 2. Click **"New Project"** → **"Deploy from GitHub repo"**
-3. Select **`Pritahi/poly-core`**
+3. Select **`Pritahi/falsky-core`**
 4. Railway will auto-detect Python and install requirements
 5. Set environment variables:
-   - `POLY_API_KEY` — Your secret API key (e.g. `poly_sk_abc123...`)
-   - `POLY_ADMIN_PASSWORD` — Admin panel password (default: `admin123`)
+   - `FALSKY_API_KEY` — Your secret API key (e.g. `falsky_sk_abc123...`)
+   - `FALSKY_ADMIN_PASSWORD` — Admin panel password (default: `admin123`)
 6. Click **Deploy**
 
-Railway will give you a URL like: `https://poly-core-production.up.railway.app`
+Railway will give you a URL like: `https://falsky-core-production.up.railway.app`
 
-### Step 3: Connect poly-action
+### Step 3: Connect falsky-action
 
-In your users' GitHub repos, they set up poly-action with:
+In your users' GitHub repos, they set up falsky-action with:
 
 ```yaml
-- uses: Pritahi/poly-action@v1
+- uses: Pritahi/falsky-action@v1
   with:
-    poly-api-url: 'https://poly-core-production.up.railway.app'  # Your Railway URL
-    poly-api-key: ${{ secrets.POLY_API_KEY }}                    # User's API key
+    falsky-api-url: 'https://falsky-core-production.up.railway.app'  # Your Railway URL
+    falsky-api-key: ${{ secrets.FALSKY_API_KEY }}                    # User's API key
     test-results-path: '**/test-results/*.xml'
 ```
 
@@ -291,9 +291,9 @@ In your users' GitHub repos, they set up poly-action with:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `POLY_API_KEY` | Yes | `poly-dev-key` | API key for test ingestion |
-| `POLY_ADMIN_PASSWORD` | No | `admin123` | Admin panel login password |
-| `POLY_DB_PATH` | No | `backend/poly.db` | SQLite database path |
+| `FALSKY_API_KEY` | Yes | `falsky-dev-key` | API key for test ingestion |
+| `FALSKY_ADMIN_PASSWORD` | No | `admin123` | Admin panel login password |
+| `FALSKY_DB_PATH` | No | `backend/falsky.db` | SQLite database path |
 
 ---
 
@@ -301,8 +301,8 @@ In your users' GitHub repos, they set up poly-action with:
 
 ```bash
 # Clone
-git clone https://github.com/Pritahi/poly-core.git
-cd poly-core
+git clone https://github.com/Pritahi/falsky-core.git
+cd falsky-core
 
 # Install dependencies
 pip install -r requirements.txt

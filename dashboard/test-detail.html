@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Poly — Test Detail</title>
+<title>Falsky — Test Detail</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,ital,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;0,6..72,800;1,6..72,400;1,6..72,600&family=Fragment+Mono&family=Special+Elite&display=swap" rel="stylesheet">
@@ -622,7 +622,7 @@ body {
 <!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <div class="sidebar-logo"><span>Poly</span></div>
+    <div class="sidebar-logo"><span>Falsky</span></div>
   </div>
   <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
     <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
@@ -817,7 +817,7 @@ function renderHeader(data) {
   const color = trustColorHex(score);
 
   $('topbarTitle').textContent = data.test_name || testName;
-  document.title = `Poly — ${data.test_name || testName}`;
+  document.title = `Falsky — ${data.test_name || testName}`;
 
   $('trustBadge').style.display = 'flex';
   $('trustBadge').style.borderColor = color;

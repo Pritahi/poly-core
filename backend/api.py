@@ -1,5 +1,5 @@
 """
-Poly — AI Flaky Test Trust Layer
+Falsky — AI Flaky Test Trust Layer
 FastAPI Backend Server
 Refactored to use Supabase SDK instead of psycopg2.
 """
@@ -27,7 +27,7 @@ from engine.trust_engine import (
     get_quarantined_tests, send_alert, ensure_initialized,
 )
 
-logger = logging.getLogger("poly.api")
+logger = logging.getLogger("falsky.api")
 
 
 # ===================== LIFESPAN =====================
@@ -36,15 +36,15 @@ logger = logging.getLogger("poly.api")
 async def lifespan(app: FastAPI):
     try:
         ensure_initialized()
-        logger.info("Poly API started (Supabase SDK)")
+        logger.info("Falsky API started (Supabase SDK)")
     except Exception as e:
         logger.error(f"Startup init error (non-fatal): {e}")
     yield
-    logger.info("Poly API shutting down")
+    logger.info("Falsky API shutting down")
 
 
 app = FastAPI(
-    title="Poly — AI Flaky Test Trust Layer",
+    title="Falsky — AI Flaky Test Trust Layer",
     description="Production-ready flaky test detection with Bayesian scoring",
     version="3.0.0",
     lifespan=lifespan,
@@ -66,14 +66,22 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # ===================== CONFIG =====================
 
-base_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Robust base_path: works in Vercel serverless and local dev
+_base = os.path.dirname(os.path.abspath(__file__))  # backend/
+base_path = os.path.dirname(_base)  # project root
+# Vercel fallback: if dashboard/ not found at base_path, try /var/task
+if not os.path.isdir(os.path.join(base_path, "dashboard")):
+    if os.path.isdir(os.path.join("/var/task", "dashboard")):
+        base_path = "/var/task"
+    elif os.path.isdir(os.path.join(_base, "dashboard")):
+        base_path = _base  # dashboard is inside backend/
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
 SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
 SITE_URL = os.environ.get("SITE_URL", "")
 ALLOWED_ADMIN_EMAILS = os.environ.get("ALLOWED_ADMIN_EMAILS", "").split(",") if os.environ.get("ALLOWED_ADMIN_EMAILS") else []
-CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "https://poly-core-vercel.vercel.app,http://localhost:3000,http://localhost:8000").split(",")
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "https://falsky-core-vercel.vercel.app,http://localhost:3000,http://localhost:8000").split(",")
 
 app.add_middleware(
     CORSMiddleware,
@@ -106,23 +114,23 @@ def _check_rate_limit(ip: str):
 
 # ===================== AUTH HELPERS =====================
 
-def verify_api_key(x_poly_api_key: Optional[str] = Header(None)):
-    env_key = os.environ.get("POLY_API_KEY", "")
-    if x_poly_api_key and x_poly_api_key == env_key:
-        return x_poly_api_key
-    if x_poly_api_key:
-        user = select_one("users", "id", {"api_key": x_poly_api_key, "is_active": True})
+def verify_api_key(x_falsky_api_key: Optional[str] = Header(None)):
+    env_key = os.environ.get("FALSKY_API_KEY", "")
+    if x_falsky_api_key and x_falsky_api_key == env_key:
+        return x_falsky_api_key
+    if x_falsky_api_key:
+        user = select_one("users", "id", {"api_key": x_falsky_api_key, "is_active": True})
         if user:
-            return x_poly_api_key
+            return x_falsky_api_key
     raise HTTPException(status_code=401, detail="Invalid API key")
 
 
-POLY_ADMIN_SECRET = os.environ.get("POLY_ADMIN_SECRET", "poly-admin-secret-key-change-in-production")
+FALSKY_ADMIN_SECRET = os.environ.get("FALSKY_ADMIN_SECRET", "falsky-admin-secret-key-change-in-production")
 
 
 def _get_admin_session(request: Request):
     """Verify admin session — supports JWT (Google) and legacy JWT tokens."""
-    token = request.cookies.get("poly_admin_token")
+    token = request.cookies.get("falsky_admin_token")
     if not token:
         return None
     # Try Google OAuth JWT first
@@ -148,7 +156,7 @@ def _get_admin_session(request: Request):
             pass
     # Fallback: verify our own admin JWT token
     try:
-        payload = jwt.decode(token, POLY_ADMIN_SECRET, algorithms=["HS256"], audience="poly-admin")
+        payload = jwt.decode(token, FALSKY_ADMIN_SECRET, algorithms=["HS256"], audience="falsky-admin")
         return {
             "username": payload.get("username", "admin"),
             "role": payload.get("role", "admin"),
@@ -225,7 +233,7 @@ class UserUpdate(BaseModel):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "version": "3.0.0", "service": "poly-core", "auth": "supabase-google" if SUPABASE_URL else "legacy", "db": "supabase-sdk"}
+    return {"status": "ok", "version": "3.0.0", "service": "falsky-core", "auth": "supabase-google" if SUPABASE_URL else "legacy", "db": "supabase-sdk"}
 
 
 # ===================== SUPABASE GOOGLE AUTH =====================
@@ -256,13 +264,13 @@ def auth_callback(request: Request):
         except Exception:
             return RedirectResponse(url="/admin/?error=invalid_token")
     response = RedirectResponse(url="/admin/")
-    response.set_cookie(key="poly_admin_token", value=access_token, httponly=True, secure=True, samesite="lax", max_age=86400 * 7, path="/")
+    response.set_cookie(key="falsky_admin_token", value=access_token, httponly=True, secure=True, samesite="lax", max_age=86400 * 7, path="/")
     return response
 
 
 @app.post("/api/auth/logout")
 def auth_logout(response: Response):
-    response.delete_cookie("poly_admin_token", path="/")
+    response.delete_cookie("falsky_admin_token", path="/")
     return {"status": "ok"}
 
 
@@ -273,12 +281,19 @@ def auth_config():
 
 # ===================== STATIC / ROOT =====================
 
+def _serve_html(relative_path: str, fallback_title: str = "Falsky"):
+    """Read HTML file and return as HTMLResponse. Vercel-safe."""
+    full = os.path.join(base_path, relative_path)
+    try:
+        with open(full, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        return HTMLResponse(f"<h1>{fallback_title}</h1><p>Page not found.</p>", status_code=404)
+
+
 @app.get("/", response_class=HTMLResponse)
 def root():
-    landing_path = os.path.join(base_path, "landing", "index.html")
-    if os.path.exists(landing_path):
-        return FileResponse(landing_path)
-    return HTMLResponse("<h1>Poly — AI Flaky Test Trust Layer</h1>", status_code=404)
+    return _serve_html(os.path.join("landing", "index.html"), "Falsky — AI Flaky Test Trust Layer")
 
 
 # ===================== ADMIN AUTH =====================
@@ -304,13 +319,13 @@ def admin_login(data: AdminLogin, request: Request, response: Response):
         jwt_payload = {
             "username": admin["username"],
             "role": admin["role"],
-            "aud": "poly-admin",
+            "aud": "falsky-admin",
             "exp": datetime.now(timezone.utc) + timedelta(days=7),
             "iat": datetime.now(timezone.utc),
         }
-        token = jwt.encode(jwt_payload, POLY_ADMIN_SECRET, algorithm="HS256")
+        token = jwt.encode(jwt_payload, FALSKY_ADMIN_SECRET, algorithm="HS256")
         
-        response.set_cookie(key="poly_admin_token", value=token, httponly=True, secure=True, samesite="lax", max_age=86400 * 7)
+        response.set_cookie(key="falsky_admin_token", value=token, httponly=True, secure=True, samesite="lax", max_age=86400 * 7)
         logger.info(f"Admin login successful: {data.username}")
         return {"status": "ok", "username": admin["username"], "role": admin["role"]}
     except HTTPException:
@@ -322,7 +337,7 @@ def admin_login(data: AdminLogin, request: Request, response: Response):
 
 @app.post("/api/admin/logout")
 def admin_logout(request: Request, response: Response):
-    response.delete_cookie("poly_admin_token", path="/")
+    response.delete_cookie("falsky_admin_token", path="/")
     return {"status": "ok"}
 
 
@@ -394,7 +409,7 @@ def admin_list_users(request: Request, search: str = "", plan: str = "", sort: s
 def admin_create_user(data: UserCreate, request: Request):
     try:
         require_admin(request)
-        api_key = f"poly_{secrets.token_urlsafe(24)}"
+        api_key = f"falsky_{secrets.token_urlsafe(24)}"
         user = insert("users", {
             "name": data.name,
             "email": data.email,
@@ -621,7 +636,7 @@ def test_alert(repo_name: str = Query(...)):
         cfg = select_one("alerts_config", "*", {"repo_id": repo["id"]})
         if not cfg:
             raise HTTPException(status_code=404, detail="No alert config found")
-        ok = send_alert(repo_name=repo_name, webhook_url=cfg["webhook_url"], channel_type=cfg["channel_type"], alert_data={"Test": "Poly connectivity test", "Status": "Alert channel working"})
+        ok = send_alert(repo_name=repo_name, webhook_url=cfg["webhook_url"], channel_type=cfg["channel_type"], alert_data={"Test": "Falsky connectivity test", "Status": "Alert channel working"})
         return {"status": "sent" if ok else "failed"}
     except HTTPException:
         raise
@@ -645,7 +660,7 @@ def delete_test(test_name: str, repo_name: str = Query(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def _badge_svg(score: float, label: str = "poly trust") -> str:
+def _badge_svg(score: float, label: str = "falsky trust") -> str:
     if score >= 90: color = "#22c55e"
     elif score >= 70: color = "#eab308"
     elif score >= 50: color = "#f97316"
@@ -676,25 +691,19 @@ def trust_badge(repo_name: str):
 
 @app.get("/dashboard/", response_class=HTMLResponse)
 def serve_dashboard():
-    return FileResponse(os.path.join(base_path, "dashboard", "index.html"))
+    return _serve_html(os.path.join("dashboard", "index.html"), "Falsky Dashboard")
 
 @app.get("/dashboard/test-detail.html", response_class=HTMLResponse)
 def serve_test_detail():
-    path = os.path.join(base_path, "dashboard", "test-detail.html")
-    if os.path.exists(path):
-        return FileResponse(path)
-    return HTMLResponse("<h1>Test Detail</h1>", status_code=404)
+    return _serve_html(os.path.join("dashboard", "test-detail.html"), "Test Detail")
 
 @app.get("/dashboard/guide.html", response_class=HTMLResponse)
 def serve_guide():
-    path = os.path.join(base_path, "dashboard", "guide.html")
-    if os.path.exists(path):
-        return FileResponse(path)
-    return HTMLResponse("<h1>Guide</h1>", status_code=404)
+    return _serve_html(os.path.join("dashboard", "guide.html"), "Falsky Guide")
 
 @app.get("/admin/", response_class=HTMLResponse)
 def serve_admin():
-    return FileResponse(os.path.join(base_path, "dashboard", "admin.html"))
+    return _serve_html(os.path.join("dashboard", "admin.html"), "Falsky Admin")
 
 @app.get("/landing/", response_class=HTMLResponse)
 def serve_landing():
@@ -704,9 +713,9 @@ def serve_landing():
 @app.get("/favicon.ico")
 def favicon():
     svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
-           '<rect width="32" height="32" rx="8" fill="#8b5cf6"/>'
+           '<rect width="32" height="32" rx="8" fill="#121212"/>'
            '<text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" '
-           'fill="#fff" font-family="system-ui" font-weight="800" font-size="18">P</text></svg>')
+           'fill="#C8A95A" font-family="system-ui" font-weight="800" font-size="18">F</text></svg>')
     return HTMLResponse(content=svg, media_type="image/svg+xml")
 
 
