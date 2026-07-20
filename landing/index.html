@@ -573,69 +573,70 @@ function spawnTremor(){
 }
 ['seed','seed','seed'].forEach(()=>pushLog(1.5+Math.random()*4.5));
 
+let markers=[],buf2=[];
 function draw(){
   frameN++;
   let tv=0;
   tremors=tremors.filter(t=>t.age<t.dur);
-  for(const t of tremors){const p=t.age/t.dur;tv+=Math.sin(p*Math.PI)*t.amp*Math.sin(frameN*.06+t.ph);t.age++;}
-  const base=H/2;
-  const noise=(Math.random()-.5)*6;
-  const spike=Math.random()<.01?(Math.random()-.5)*30:0;
-  const y=base+noise+spike+tv*.5;
-  buf.push(y);if(buf.length>W)buf.shift();
-  ctx.fillStyle='#0A1315';ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle='rgba(30,50,55,.4)';ctx.lineWidth=.5;
-  for(let gy=0;gy<H;gy+=20){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.stroke();}
-  ctx.strokeStyle='rgba(44,70,75,.5)';ctx.lineWidth=.5;
-  ctx.beginPath();ctx.moveTo(0,base);ctx.lineTo(W,base);ctx.stroke();
-  ctx.beginPath();
-  buf.forEach((v,i)=>{const x=W-buf.length+i;if(i===0)ctx.moveTo(x,v);else ctx.lineTo(x,v);});
-  ctx.strokeStyle='rgba(61,220,132,.15)';ctx.lineWidth=6;ctx.stroke();
-  ctx.beginPath();
-  buf.forEach((v,i)=>{const x=W-buf.length+i;if(i===0)ctx.moveTo(x,v);else ctx.lineTo(x,v);});
-  ctx.strokeStyle='#3DDC84';ctx.lineWidth=1.5;ctx.stroke();
-  if(tremors.length>0){
-    const last=tremors[tremors.length-1];
-    if(last.age<20){ctx.fillStyle='rgba(255,75,46,'+((20-last.age)/20*.12)+')';ctx.fillRect(0,0,W,H);}
-  }
-  if(!reduced)requestAnimationFrame(draw);
+  for(const t of tremors){const p=t.age/t.dur;
+    tv+=Math.exp(-3.4*p)*Math.sin(t.age*.32+t.ph)*t.amp*(p<.08?p/.08:1);t.age++;}
+  if(!reduced&&!document.hidden&&tremors.length<2&&Math.random()<.012)spawnTremor();
+  const maxPts=Math.ceil(W/2)+2;
+  buf.push((Math.random()-.5)*3+tv);if(buf.length>maxPts)buf.shift();
+  buf2.push((Math.random()-.5)*2+tv*.42);if(buf2.length>maxPts)buf2.shift();
+  markers.forEach(m=>m.x-=2);markers=markers.filter(m=>m.x>0);
+
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(70,110,115,.22)';ctx.lineWidth=1;
+  const off=(frameN*2)%46;
+  for(let x=-off;x<W;x+=46){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=36){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.strokeStyle='rgba(120,160,165,.35)';ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+
+  function trace(b,col,w,glow){ctx.beginPath();
+    for(let i=0;i<b.length;i++){const x=i*2,y=H/2-b[i];i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+    ctx.strokeStyle=col;ctx.lineWidth=w;ctx.shadowColor=glow;ctx.shadowBlur=6;ctx.stroke();ctx.shadowBlur=0;}
+  trace(buf2,'rgba(255,176,32,.45)',1,'rgba(255,176,32,.4)');
+  trace(buf,'#3DDC84',1.6,'rgba(61,220,132,.6)');
+
+  ctx.fillStyle='rgba(61,220,132,.8)';ctx.font='9px IBM Plex Mono';ctx.fillText('CH.01 MAIN',10,H-10);
+  ctx.fillStyle='rgba(255,176,32,.7)';ctx.fillText('CH.02 NIGHTLY',10,H-24);
+  requestAnimationFrame(draw);
 }
 draw();
 
 function scheduleTremor(){spawnTremor();setTimeout(scheduleTremor,3000+Math.random()*5000);}
 setTimeout(scheduleTremor,2000);
 
-/* ---------- richter simulation ---------- */
-document.getElementById('simBtn').addEventListener('click',function(){
-  const btn=this;btn.disabled=true;btn.textContent='SIMULATING…';
-  const v=document.getElementById('verdict');
-  const buckets=[0,0,0,0,0,0,0]; // I-VII
-  let run=0;
-  function step(){
-    for(let i=0;i<50;i++){
-      run++;
-      const r=Math.random();
-      if(r<.0001)buckets[0]++;
-      else if(r<.001)buckets[1]++;
-      else if(r<.0033)buckets[2]++;
-      else if(r<.01)buckets[3]++;
-      else if(r<.033)buckets[4]++;
-      else if(r<.2)buckets[5]++;
-      else if(r<.5)buckets[6]++;
-    }
-    if(run<1000){setTimeout(step,20);}
-    else{
-      const total=buckets.reduce((a,b)=>a+b,0);
-      const maxB=Math.max(...buckets,1);
-      const names=['MICROTREMOR','WHISPER','NOTICEABLE','SHAKE','QUAKE','SEVERE','COIN FLIP'];
-      let html='<b>RESULTS //</b> '+total+' flaky events in 1,000 runs — ';
-      html+=buckets.map((b,i)=>names[i]+': '+b).join(' · ');
-      v.innerHTML=html;
-      if(total>50)v.classList.add('alert');
-      btn.disabled=false;btn.textContent='▶ Run again';
-    }
-  }
-  step();
+/* ---------- richter simulator ---------- */
+const rows=[...document.querySelectorAll('.scale-row')],verdict=document.getElementById('verdict'),simBtn=document.getElementById('simBtn');
+const verdicts=[
+  '<b>VERDICT — MAG I · MICROTREMOR.</b> Logged & fingerprinted. No action needed; the drum remembers.',
+  '<b>VERDICT — MAG II · WHISPER.</b> A rerun hid it. Fingerprint kept for cross-run correlation.',
+  '<b>VERDICT — MAG III · NOTICEABLE.</b> Classic "works on my machine". Owner notified with waveform attached.',
+  '<b>VERDICT — MAG IV · SHAKE.</b> Order-dependent — fails only after test_cart. Quarantined · ticket auto-filed.',
+  '<b>VERDICT — MAG V · QUAKE.</b> Shared-state bleed. Epicenter: conftest.py, line 212. Refactor scheduled.',
+  '<b>VERDICT — MAG VI · SEVERE.</b> Retry policy is load-bearing. True pass rate underneath: 19%. Escalated.',
+  '<b>VERDICT — MAG VII · COIN FLIP.</b> This test is a random number generator with opinions. Auto-quarantined.'];
+const weights=[1,2,4,5,4,2,1];
+function weighted(){const tot=weights.reduce((a,b)=>a+b),r=Math.random()*tot;let c=0;
+  for(let i=0;i<weights.length;i++){c+=weights[i];if(r<c)return i;}return 3;}
+let running=false;
+simBtn.addEventListener('click',()=>{
+  if(running)return;running=true;simBtn.style.opacity=.5;
+  verdict.classList.remove('alert');verdict.innerHTML='<b>SCANNING //</b> sampling 1,000 executions… correlating waveforms…';
+  rows.forEach(r=>r.classList.remove('hit'));
+  const total=18+Math.floor(Math.random()*8),final=weighted();
+  let i=0;
+  (function step(){
+    rows.forEach(r=>r.classList.remove('scan'));
+    rows[i%rows.length].classList.add('scan');
+    i++;
+    if(i<=total){const slow=i>total-6?70+(i-(total-6))*95:60;setTimeout(step,slow);}
+    else{rows.forEach(r=>r.classList.remove('scan'));rows[final].classList.add('hit');
+      verdict.classList.add('alert');verdict.innerHTML=verdicts[final];
+      running=false;simBtn.style.opacity=1;}
+  })();
 });
 
 /* ---------- copy terminal ---------- */
