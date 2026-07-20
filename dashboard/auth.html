@@ -44,41 +44,20 @@ body{
 .card-head{padding:28px 32px 0;text-align:center}
 .card-head h1{font-family:var(--disp);font-weight:400;font-size:1.8rem;letter-spacing:.03em;color:var(--paper);text-transform:uppercase;margin-bottom:6px}
 .card-head p{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--dim)}
-
 .card-body{padding:28px 32px 32px}
 
-/* Tabs */
-.tabs{display:flex;border:1px solid var(--line2);margin-bottom:24px}
-.tab{flex:1;padding:10px;text-align:center;font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted);cursor:pointer;transition:all .18s;border:none;background:none}
-.tab:first-child{border-right:1px solid var(--line2)}
-.tab:hover{color:var(--paper);background:var(--ink4)}
-.tab.active{background:var(--amber);color:#171310;font-weight:600}
+/* Google Button */
+.google-btn{width:100%;padding:14px;background:var(--ink3);color:var(--text);border:1px solid var(--line2);font-family:var(--mono);font-size:13px;letter-spacing:.06em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .18s;text-decoration:none;border-radius:2px}
+.google-btn:hover{border-color:var(--amber);color:var(--amber);transform:translate(-1px,-1px);box-shadow:4px 4px 0 rgba(255,176,32,.15)}
+.google-btn svg{width:20px;height:20px;flex-shrink:0}
 
-/* Form */
-.form{display:none}
-.form.active{display:block}
-.field{margin-bottom:16px}
-.field label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--dim);margin-bottom:6px;text-transform:uppercase}
-.field input{width:100%;padding:12px 14px;background:var(--ink3);border:1px solid var(--line2);color:var(--text);font-family:var(--mono);font-size:13px;letter-spacing:.04em;outline:none;transition:border-color .2s}
-.field input:focus{border-color:var(--amber)}
-.field input::placeholder{color:var(--dim)}
+/* Info */
+.info{margin-top:20px;text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--dim);line-height:1.7}
+.info a{color:var(--amber);text-decoration:none}
+.info a:hover{text-decoration:underline}
 
-/* Button */
-.submit-btn{width:100%;padding:14px;background:var(--amber);color:#171310;border:none;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:all .18s;box-shadow:4px 4px 0 var(--red);margin-top:8px}
-.submit-btn:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--red)}
-.submit-btn:active{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--red)}
-.submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:4px 4px 0 var(--red)}
-
-/* Error */
-.error-msg{display:none;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--red);text-align:center;margin-top:12px;padding:8px;border:1px solid rgba(255,75,46,.3);background:rgba(255,75,46,.06)}
-.error-msg.show{display:block}
-
-/* Success */
-.success-msg{display:none;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--green);text-align:center;margin-top:12px;padding:8px;border:1px solid rgba(61,220,132,.3);background:rgba(61,220,132,.06)}
-.success-msg.show{display:block}
-
-/* API Key display */
-.apikey-box{display:none;margin-top:20px;padding:16px;background:var(--ink3);border:1px solid var(--line2)}
+/* API Key display (after login) */
+.apikey-box{display:none;margin-top:24px;padding:16px;background:var(--ink3);border:1px solid var(--line2)}
 .apikey-box.show{display:block}
 .apikey-box .label{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--dim);margin-bottom:8px;text-transform:uppercase}
 .apikey-box .key{font-family:var(--mono);font-size:13px;color:var(--green);word-break:break-all;padding:10px;background:var(--ink);border:1px solid var(--line);cursor:pointer;transition:all .2s;user-select:all}
@@ -95,7 +74,10 @@ body{
 .footer a{color:var(--amber);text-decoration:none}
 .footer a:hover{text-decoration:underline}
 
-/* Responsive */
+/* Seismo line animation */
+.seismo{margin:20px 0 8px;opacity:.4}
+.seismo svg{width:100%;height:40px}
+
 @media(max-width:480px){
   .auth-wrap{padding:12px}
   .card-head,.card-body{padding-left:20px;padding-right:20px}
@@ -113,52 +95,25 @@ body{
 
   <div class="card">
     <div class="card-head">
-      <h1 id="formTitle">Sign In</h1>
-      <p id="formSub">Access your trust layer</p>
+      <h1>Sign In</h1>
+      <p>Access your trust layer</p>
     </div>
     <div class="card-body">
-      <div class="tabs">
-        <div class="tab active" data-tab="login" onclick="switchTab('login')">SIGN IN</div>
-        <div class="tab" data-tab="signup" onclick="switchTab('signup')">CREATE ACCOUNT</div>
+      <!-- Seismo line -->
+      <div class="seismo">
+        <svg viewBox="0 0 300 40" fill="none"><polyline points="0,20 30,20 45,20 55,5 65,35 75,10 85,28 95,20 120,20 140,20 150,8 160,32 170,15 180,25 190,20 220,20 250,20 260,12 270,28 280,20 300,20" stroke="#FF4B2E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><animate attributeName="stroke-dasharray" values="0,600;600,0" dur="3s" repeatCount="indefinite"/></polyline></svg>
       </div>
 
-      <!-- Login Form -->
-      <form class="form active" id="loginForm" onsubmit="doLogin(event)">
-        <div class="field">
-          <label>Email</label>
-          <input type="email" id="loginEmail" placeholder="you@company.dev" required autocomplete="email">
-        </div>
-        <div class="field">
-          <label>Password</label>
-          <input type="password" id="loginPass" placeholder="••••••••" required autocomplete="current-password">
-        </div>
-        <button type="submit" class="submit-btn" id="loginBtn">Sign In →</button>
-        <div class="error-msg" id="loginError"></div>
-        <div class="success-msg" id="loginSuccess"></div>
-      </form>
+      <!-- Google Sign-In -->
+      <a href="/api/user/google" class="google-btn" id="googleBtn">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Sign in with Google
+      </a>
 
-      <!-- Signup Form -->
-      <form class="form" id="signupForm" onsubmit="doSignup(event)">
-        <div class="field">
-          <label>Full Name</label>
-          <input type="text" id="signupName" placeholder="Jane Doe" required>
-        </div>
-        <div class="field">
-          <label>Email</label>
-          <input type="email" id="signupEmail" placeholder="you@company.dev" required autocomplete="email">
-        </div>
-        <div class="field">
-          <label>Password</label>
-          <input type="password" id="signupPass" placeholder="Min 8 characters" required minlength="8" autocomplete="new-password">
-        </div>
-        <div class="field">
-          <label>GitHub Username <span style="color:var(--dim)">(optional)</span></label>
-          <input type="text" id="signupGithub" placeholder="@handle">
-        </div>
-        <button type="submit" class="submit-btn" id="signupBtn">Create Account →</button>
-        <div class="error-msg" id="signupError"></div>
-        <div class="success-msg" id="signupSuccess"></div>
-      </form>
+      <div class="info">
+        No password needed · Free forever<br>
+        Your API key is generated automatically
+      </div>
 
       <!-- API Key Display (after login) -->
       <div class="apikey-box" id="apikeyBox">
@@ -179,102 +134,22 @@ body{
 </div>
 
 <script>
-const API = '';
-
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  document.getElementById('loginForm').classList.toggle('active', tab === 'login');
-  document.getElementById('signupForm').classList.toggle('active', tab === 'signup');
-  document.getElementById('formTitle').textContent = tab === 'login' ? 'Sign In' : 'Create Account';
-  document.getElementById('formSub').textContent = tab === 'login' ? 'Access your trust layer' : 'Start detecting flaky tests';
-  // Clear messages
-  ['loginError','signupError','loginSuccess','signupSuccess'].forEach(id => {
-    const el = document.getElementById(id);
-    el.classList.remove('show'); el.textContent = '';
-  });
-}
-
-function showError(id, msg) {
-  const el = document.getElementById(id);
-  el.textContent = msg; el.classList.add('show');
-}
-
-function showSuccess(id, msg) {
-  const el = document.getElementById(id);
-  el.textContent = msg; el.classList.add('show');
-}
-
-async function doLogin(e) {
-  e.preventDefault();
-  const btn = document.getElementById('loginBtn');
-  btn.disabled = true; btn.textContent = 'SIGNING IN…';
-  document.getElementById('loginError').classList.remove('show');
-
+// Check if already logged in
+(async () => {
   try {
-    const res = await fetch(API + '/api/user/login', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        email: document.getElementById('loginEmail').value,
-        password: document.getElementById('loginPass').value
-      })
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      showError('loginError', data.detail || 'Invalid credentials');
-      btn.disabled = false; btn.textContent = 'Sign In →';
-      return;
+    const res = await fetch('/api/auth/me');
+    if (res.ok) {
+      const data = await res.json();
+      document.getElementById('googleBtn').style.display = 'none';
+      document.querySelector('.info').style.display = 'none';
+      document.querySelector('.seismo').style.display = 'none';
+      document.getElementById('apikeyValue').textContent = data.api_key || 'No API key';
+      document.getElementById('apikeyBox').classList.add('show');
+      document.querySelector('.card-head h1').textContent = 'Welcome Back';
+      document.querySelector('.card-head p').textContent = data.email || 'Authenticated';
     }
-    // Show API key
-    document.getElementById('loginForm').classList.remove('active');
-    document.getElementById('apikeyValue').textContent = data.api_key || 'No API key found';
-    document.getElementById('apikeyBox').classList.add('show');
-    document.getElementById('formTitle').textContent = 'Welcome Back';
-    document.getElementById('formSub').textContent = data.name || data.email;
-    document.querySelector('.tabs').style.display = 'none';
-  } catch(err) {
-    showError('loginError', 'Connection failed — try again');
-  }
-  btn.disabled = false; btn.textContent = 'Sign In →';
-}
-
-async function doSignup(e) {
-  e.preventDefault();
-  const btn = document.getElementById('signupBtn');
-  btn.disabled = true; btn.textContent = 'CREATING ACCOUNT…';
-  document.getElementById('signupError').classList.remove('show');
-
-  try {
-    const res = await fetch(API + '/api/user/register', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        name: document.getElementById('signupName').value,
-        email: document.getElementById('signupEmail').value,
-        password: document.getElementById('signupPass').value,
-        github_username: document.getElementById('signupGithub').value || null,
-        signup_source: 'landing_page'
-      })
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      showError('signupError', data.detail || 'Registration failed');
-      btn.disabled = false; btn.textContent = 'Create Account →';
-      return;
-    }
-    // Show success + API key
-    document.getElementById('signupForm').classList.remove('active');
-    document.getElementById('apikeyValue').textContent = data.api_key;
-    document.getElementById('apikeyBox').classList.add('show');
-    document.getElementById('formTitle').textContent = 'Account Created';
-    document.getElementById('formSub').textContent = 'Welcome to Falsky';
-    document.querySelector('.tabs').style.display = 'none';
-    showSuccess('signupSuccess', 'Account created! Copy your API key below.');
-  } catch(err) {
-    showError('signupError', 'Connection failed — try again');
-  }
-  btn.disabled = false; btn.textContent = 'Create Account →';
-}
+  } catch(e) {}
+})();
 
 function copyKey() {
   const key = document.getElementById('apikeyValue').textContent;
@@ -286,25 +161,9 @@ function copyKey() {
 }
 
 async function doLogout() {
-  await fetch(API + '/api/user/logout', {method: 'POST'});
+  await fetch('/api/auth/logout', {method: 'POST'});
   location.reload();
 }
-
-// Auto-login check
-(async () => {
-  try {
-    const res = await fetch(API + '/api/user/me');
-    if (res.ok) {
-      const data = await res.json();
-      document.getElementById('loginForm').classList.remove('active');
-      document.getElementById('apikeyValue').textContent = data.api_key || 'No API key';
-      document.getElementById('apikeyBox').classList.add('show');
-      document.getElementById('formTitle').textContent = 'Welcome Back';
-      document.getElementById('formSub').textContent = data.name || data.email;
-      document.querySelector('.tabs').style.display = 'none';
-    }
-  } catch(e) {}
-})();
 </script>
 </body>
 </html>

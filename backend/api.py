@@ -54,6 +54,21 @@ app = FastAPI(
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
+        # API rate limiting (60 req/min per IP, skip static pages)
+        if request.url.path.startswith("/api/"):
+            client_ip = request.client.host if request.client else "unknown"
+            now = time.time()
+            if client_ip in _api_requests:
+                count, first_time = _api_requests[client_ip]
+                if now - first_time > 60:
+                    _api_requests[client_ip] = (1, now)
+                elif count >= 60:
+                    from fastapi.responses import JSONResponse
+                    return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded. Try again shortly."})
+                else:
+                    _api_requests[client_ip] = (count + 1, first_time)
+            else:
+                _api_requests[client_ip] = (1, now)
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
@@ -61,6 +76,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
         return response
+
+# API rate limit store
+_api_requests = {}
 
 app.add_middleware(SecurityHeadersMiddleware)
 
@@ -254,6 +272,7 @@ def health_check():
 
 @app.get("/api/auth/google")
 def google_login():
+    """Admin Google login — restricted to ALLOWED_ADMIN_EMAILS."""
     if not SUPABASE_URL:
         raise HTTPException(status_code=501, detail="Google Sign-In not configured.")
     redirect_to = urllib.parse.quote(f"{SITE_URL}/api/auth/callback")
@@ -263,6 +282,7 @@ def google_login():
 
 @app.get("/api/auth/callback")
 def auth_callback(request: Request):
+    """Admin callback — sets admin cookie, redirects to /analytics."""
     access_token = request.query_params.get("access_token")
     error = request.query_params.get("error")
     if error:
@@ -282,6 +302,72 @@ def auth_callback(request: Request):
     return response
 
 
+# ===================== USER GOOGLE AUTH =====================
+
+@app.get("/api/user/google")
+def user_google_login():
+    """User Google login — any Google account allowed."""
+    if not SUPABASE_URL:
+        raise HTTPException(status_code=501, detail="Google Sign-In not configured.")
+    redirect_to = urllib.parse.quote(f"{SITE_URL}/api/user/callback")
+    auth_url = f"{SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to={redirect_to}"
+    return RedirectResponse(url=auth_url)
+
+
+@app.get("/api/user/callback")
+def user_auth_callback(request: Request, response: Response):
+    """User callback — auto-creates user in DB, sets user cookie, redirects to /dashboard/."""
+    access_token = request.query_params.get("access_token")
+    error = request.query_params.get("error")
+    if error:
+        return RedirectResponse(url=f"/login?error={urllib.parse.quote(error)}")
+    if not access_token:
+        return RedirectResponse(url="/login?error=no_token")
+
+    email = ""
+    name = ""
+    avatar = ""
+    github_username = ""
+
+    if SUPABASE_JWT_SECRET:
+        try:
+            payload = jwt.decode(access_token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
+            email = payload.get("email", "")
+            meta = payload.get("user_metadata") or {}
+            name = meta.get("full_name") or meta.get("name") or email.split("@")[0]
+            avatar = meta.get("avatar_url", "")
+            github_username = meta.get("user_name") or meta.get("preferred_username") or ""
+        except Exception:
+            return RedirectResponse(url="/login?error=invalid_token")
+
+    if not email:
+        return RedirectResponse(url="/login?error=no_email")
+
+    # Auto-create user in DB if not exists
+    existing = select_one("users", "id, api_key", {"email": email})
+    if not existing:
+        api_key = "falsky_" + secrets.token_urlsafe(24)
+        try:
+            insert("users", {
+                "name": name,
+                "email": email,
+                "github_username": github_username,
+                "api_key": api_key,
+                "plan": "free",
+                "is_active": True,
+                "signup_source": "google_oauth",
+                "avatar_url": avatar,
+            })
+            logger.info(f"New user created via Google: {email}")
+        except Exception as e:
+            logger.warning(f"User create failed (may already exist): {e}")
+
+    # Set cookie and redirect to dashboard
+    resp = RedirectResponse(url="/dashboard/")
+    resp.set_cookie(key="falsky_user_token", value=access_token, httponly=True, secure=True, samesite="lax", max_age=86400 * 30, path="/")
+    return resp
+
+
 @app.post("/api/auth/logout")
 def auth_logout(response: Response):
     response.delete_cookie("falsky_admin_token", path="/")
@@ -291,6 +377,53 @@ def auth_logout(response: Response):
 @app.get("/api/auth/config")
 def auth_config():
     return {"google_enabled": bool(SUPABASE_URL), "has_legacy": True}
+
+
+@app.get("/api/auth/me")
+def auth_me(request: Request):
+    """Get current user info from Google auth cookie (admin or user)."""
+    # Check admin token first
+    admin = _get_admin_session(request)
+    if admin:
+        email = admin.get("email", "")
+        api_key = ""
+        if email:
+            user = select_one("users", "api_key", {"email": email})
+            if user:
+                api_key = user.get("api_key", "")
+        return {
+            "email": email,
+            "name": admin.get("username", ""),
+            "avatar": admin.get("avatar", ""),
+            "auth_provider": admin.get("auth_provider", "google"),
+            "api_key": api_key,
+            "role": "admin",
+        }
+    # Check user token (Supabase JWT from Google)
+    user_token = request.cookies.get("falsky_user_token")
+    if user_token and SUPABASE_JWT_SECRET:
+        try:
+            payload = jwt.decode(user_token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
+            email = payload.get("email", "")
+            meta = payload.get("user_metadata") or {}
+            name = meta.get("full_name") or meta.get("name") or email.split("@")[0]
+            avatar = meta.get("avatar_url", "")
+            api_key = ""
+            if email:
+                user = select_one("users", "api_key", {"email": email})
+                if user:
+                    api_key = user.get("api_key", "")
+            return {
+                "email": email,
+                "name": name,
+                "avatar": avatar,
+                "auth_provider": "google",
+                "api_key": api_key,
+                "role": "user",
+            }
+        except Exception:
+            pass
+    raise HTTPException(status_code=401, detail="Not authenticated")
 
 
 # ===================== STATIC / ROOT =====================
@@ -512,7 +645,7 @@ def admin_stats(request: Request):
 import urllib.request
 import json as _json
 
-_SUPABASE_URL = "https://mzcplqfxrxfsxnwyiyym.supabase.co"
+_SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 _SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 _SUPABASE_ANON = os.environ.get("SUPABASE_ANON_KEY", "")
 
@@ -520,8 +653,8 @@ def _supabase_rest(table, method="GET", data=None, filters=None, columns="*"):
     """Direct Supabase REST API call — bypasses db module."""
     key = _SUPABASE_SERVICE_KEY or _SUPABASE_ANON
     if not key:
-        # Hardcoded fallback for user auth
-        key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16Y3BscWZ4cnhmc3hud3lpeXltIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDI2MTM0NiwiZXhwIjoyMDk5ODM3MzQ2fQ.hrgP5Axv2ZD0cEcxlz9pm32qE9RGKgYWAx78qyLHCxw"
+        logger.error("No Supabase credentials configured — set SUPABASE_SERVICE_ROLE_KEY")
+        return None
     url = f"{_SUPABASE_URL}/rest/v1/{table}"
     params = []
     if columns:
@@ -560,7 +693,29 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
-_user_sessions = {}  # token -> {user_id, email, name}
+# JWT-based user sessions (survives serverless cold starts)
+_USER_JWT_SECRET = os.environ.get("FALSKY_USER_SECRET", "falsky-user-secret-change-in-production")
+
+def _create_user_token(user_id, email, name):
+    """Create a JWT token for user session."""
+    from datetime import datetime, timezone, timedelta
+    payload = {
+        "uid": user_id,
+        "email": email,
+        "name": name,
+        "aud": "falsky-user",
+        "exp": datetime.now(timezone.utc) + timedelta(days=30),
+        "iat": datetime.now(timezone.utc),
+    }
+    return jwt.encode(payload, _USER_JWT_SECRET, algorithm="HS256")
+
+def _decode_user_token(token):
+    """Decode and verify a user JWT token."""
+    try:
+        payload = jwt.decode(token, _USER_JWT_SECRET, algorithms=["HS256"], audience="falsky-user")
+        return {"user_id": payload["uid"], "email": payload["email"], "name": payload.get("name", "")}
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return None
 
 @app.post("/api/user/register")
 def user_register(data: UserRegister, request: Request, response: Response):
@@ -587,9 +742,8 @@ def user_register(data: UserRegister, request: Request, response: Response):
         if not result or len(result) == 0:
             raise HTTPException(status_code=500, detail="Failed to create user")
         user = result[0]
-        # Create session
-        token = secrets.token_hex(32)
-        _user_sessions[token] = {"user_id": user["id"], "email": data.email, "name": data.name}
+        # Create JWT session (survives cold starts)
+        token = _create_user_token(user["id"], data.email, data.name)
         response.set_cookie(key="falsky_user_token", value=token, httponly=True, secure=True, samesite="lax", max_age=86400 * 30)
         return {"status": "ok", "name": data.name, "email": data.email, "api_key": api_key}
     except HTTPException:
@@ -611,8 +765,7 @@ def user_login(data: UserLogin, request: Request, response: Response):
             raise HTTPException(status_code=401, detail="Account has no password set. Please register again.")
         if not bcrypt.checkpw(data.password.encode(), user["password_hash"].encode()):
             raise HTTPException(status_code=401, detail="Invalid email or password")
-        token = secrets.token_hex(32)
-        _user_sessions[token] = {"user_id": user["id"], "email": user["email"], "name": user.get("name", "")}
+        token = _create_user_token(user["id"], user["email"], user.get("name", ""))
         response.set_cookie(key="falsky_user_token", value=token, httponly=True, secure=True, samesite="lax", max_age=86400 * 30)
         return {"status": "ok", "name": user.get("name", ""), "email": user["email"], "api_key": user.get("api_key", "")}
     except HTTPException:
@@ -624,9 +777,11 @@ def user_login(data: UserLogin, request: Request, response: Response):
 @app.get("/api/user/me")
 def user_me(request: Request):
     token = request.cookies.get("falsky_user_token")
-    if not token or token not in _user_sessions:
+    if not token:
         raise HTTPException(status_code=401, detail="Not logged in")
-    session = _user_sessions[token]
+    session = _decode_user_token(token)
+    if not session:
+        raise HTTPException(status_code=401, detail="Session expired")
     users = _supabase_rest("users", filters={"id": session["user_id"]}, columns="id,name,email,api_key,plan,is_active")
     if not users or len(users) == 0 or not users[0].get("is_active", True):
         raise HTTPException(status_code=401, detail="Account not found")
@@ -635,9 +790,6 @@ def user_me(request: Request):
 
 @app.post("/api/user/logout")
 def user_logout(request: Request, response: Response):
-    token = request.cookies.get("falsky_user_token")
-    if token and token in _user_sessions:
-        del _user_sessions[token]
     response.delete_cookie("falsky_user_token")
     return {"status": "ok"}
 
@@ -874,10 +1026,19 @@ def trust_badge(repo_name: str):
 # ===================== AUTH MIDDLEWARE =====================
 
 def _check_user_auth(request: Request):
-    """Check if user is authenticated via cookie."""
+    """Check if user is authenticated via cookie (Google or custom JWT)."""
     token = request.cookies.get("falsky_user_token")
-    if token and token in _user_sessions:
-        return True
+    if token:
+        # Try custom JWT first (email/password users)
+        if _decode_user_token(token):
+            return True
+        # Try Supabase JWT (Google OAuth users)
+        if SUPABASE_JWT_SECRET:
+            try:
+                jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
+                return True
+            except Exception:
+                pass
     # Also check admin token
     admin_token = request.cookies.get("falsky_admin_token")
     if admin_token:
