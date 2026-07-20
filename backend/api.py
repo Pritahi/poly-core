@@ -507,6 +507,41 @@ def admin_stats(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ===================== DIRECT SUPABASE CLIENT (fallback) =====================
+
+import urllib.request
+import json as _json
+
+_SUPABASE_URL = "https://mzcplqfxrxfsxnwyiyym.supabase.co"
+_SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+_SUPABASE_ANON = os.environ.get("SUPABASE_ANON_KEY", "")
+
+def _supabase_rest(table, method="GET", data=None, filters=None, columns="*"):
+    """Direct Supabase REST API call — bypasses db module."""
+    key = _SUPABASE_SERVICE_KEY or _SUPABASE_ANON
+    if not key:
+        # Hardcoded fallback for user auth
+        key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16Y3BscWZ4cnhmc3hud3lpeXltIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDI2MTM0NiwiZXhwIjoyMDk5ODM3MzQ2fQ.hrgP5Axv2ZD0cEcxlz9pm32qE9RGKgYWAx78qyLHCxw"
+    url = f"{_SUPABASE_URL}/rest/v1/{table}"
+    if filters:
+        params = '&'.join(f'{k}=eq.{v}' for k,v in filters.items())
+        url += f"?{params}"
+    headers = {
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+    }
+    req = urllib.request.Request(url, headers=headers, method=method)
+    if data:
+        req.data = _json.dumps(data).encode()
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return _json.loads(resp.read().decode())
+    except Exception as e:
+        logger.error(f"Supabase REST error: {e}")
+        return None
+
 # ===================== USER AUTH =====================
 
 class UserRegister(BaseModel):
@@ -561,10 +596,10 @@ def user_register(data: UserRegister, request: Request, response: Response):
 @app.post("/api/user/login")
 def user_login(data: UserLogin, request: Request, response: Response):
     try:
-        client = get_client()
-        user = select_one("users", "id, name, email, password_hash, api_key, is_active", {"email": data.email})
-        if not user:
+        users = _supabase_rest("users", filters={"email": data.email}, columns="id,name,email,password_hash,api_key,is_active")
+        if not users or len(users) == 0:
             raise HTTPException(status_code=401, detail="Invalid email or password")
+        user = users[0]
         if not user.get("is_active", True):
             raise HTTPException(status_code=403, detail="Account is disabled")
         if not user.get("password_hash"):
@@ -587,9 +622,10 @@ def user_me(request: Request):
     if not token or token not in _user_sessions:
         raise HTTPException(status_code=401, detail="Not logged in")
     session = _user_sessions[token]
-    user = select_one("users", "id, name, email, api_key, plan, is_active", {"id": session["user_id"]})
-    if not user or not user.get("is_active", True):
+    users = _supabase_rest("users", filters={"id": session["user_id"]}, columns="id,name,email,api_key,plan,is_active")
+    if not users or len(users) == 0 or not users[0].get("is_active", True):
         raise HTTPException(status_code=401, detail="Account not found")
+    user = users[0]
     return {"name": user.get("name", ""), "email": user["email"], "api_key": user.get("api_key", ""), "plan": user.get("plan", "free")}
 
 @app.post("/api/user/logout")
