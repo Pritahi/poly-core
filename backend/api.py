@@ -1018,7 +1018,7 @@ def create_run(data: RunInput):
 
 
 @app.get("/api/dashboard")
-def dashboard(repo_name: str = Query(...)):
+def dashboard(repo_name: str = Query(...), threshold: float = Query(50)):
     try:
         # Get repo
         repos = _supabase_rest("repositories", filters={"name": repo_name}, columns="id,name")
