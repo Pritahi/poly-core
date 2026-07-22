@@ -968,16 +968,29 @@ def serve_login():
 # ===================== EXISTING API ROUTES =====================
 
 @app.post("/api/junit", dependencies=[Depends(verify_api_key)])
-def ingest_junit(data: JUnitUpload):
+async def ingest_junit(request: Request, repo_name: str = Query(...), branch: str = Query("main"), commit_sha: Optional[str] = Query(None), environment: Optional[str] = Query(None)):
     try:
+        content_type = request.headers.get("content-type", "")
+        body_bytes = await request.body()
+        if "application/xml" in content_type or "text/xml" in content_type:
+            xml_content = body_bytes.decode("utf-8")
+        else:
+            data = JUnitUpload.parse_raw(body_bytes)
+            xml_content = data.xml_content
+            repo_name = data.repo_name or repo_name
+            branch = data.branch or branch
+            commit_sha = data.commit_sha or commit_sha
+            environment = data.environment or environment
         result = process_test_run(
-            xml_content=data.xml_content,
-            repo_name=data.repo_name,
-            branch=data.branch,
-            commit_sha=data.commit_sha,
-            environment=data.environment,
+            xml_content=xml_content,
+            repo_name=repo_name,
+            branch=branch,
+            commit_sha=commit_sha,
+            environment=environment,
         )
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"JUnit ingest error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1030,19 +1043,33 @@ def dashboard(repo_name: str = Query(...)):
             if t.get("duration"):
                 agg[name]["durations"].append(t["duration"])
         result = []
+        flaky_count = 0
+        total_trust = 0
         for name, d in agg.items():
+            trust = round(sum(d["scores"]) / len(d["scores"]), 1)
+            total_trust += trust
+            if d["category"]:
+                flaky_count += 1
             result.append({
                 "test_name": name,
-                "trust_score": round(sum(d["scores"]) / len(d["scores"]), 1),
+                "trust_score": trust,
                 "pass_rate": round(d["passes"] / d["total"], 3) if d["total"] > 0 else 0,
                 "runs": d["total"],
                 "flaky_category": d["category"],
                 "avg_duration": round(sum(d["durations"]) / len(d["durations"]), 1) if d["durations"] else 0,
             })
-        return {"repo": repo_name, "tests": result, "total": len(result)}
+        avg_trust = round(total_trust / len(result), 1) if result else 0
+        return {
+            "repo": repo_name,
+            "tests": result,
+            "total": len(result),
+            "avg_trust": avg_trust,
+            "flaky_count": flaky_count,
+            "total_tests": len(result),
+        }
     except Exception as e:
         logger.error(f"Dashboard error: {e}")
-        return {"repo": repo_name, "tests": [], "total": 0}
+        return {"repo": repo_name, "tests": [], "total": 0, "avg_trust": 0, "flaky_count": 0, "total_tests": 0}
 
 
 @app.get("/api/tests")
