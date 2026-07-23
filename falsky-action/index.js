@@ -211,20 +211,12 @@ async function run() {
     const commitSha = github.context.sha || 'unknown';
     const environment = process.env.ENVIRONMENT || 'ci';
 
-    // Build query params for /api/junit
-    const junitQuery = new URLSearchParams({
-      repo_name: repoName,
-      branch: branch,
-      commit_sha: commitSha,
-      environment: environment,
-    }).toString();
-
     // Send raw JUnit XML to the backend's robust parser (/api/junit)
     core.info(`📤 Sending to Falsky API...`);
 
     let result;
     try {
-      result = await httpRequest(`${apiUrl}/api/junit?${junitQuery}`, {
+      result = await httpRequest(`${apiUrl}/api/junit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/xml',
