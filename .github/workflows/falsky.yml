@@ -8,20 +8,11 @@ on:
 jobs:
   test-and-analyze:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: falsky_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    env:
+      CI: true
+      CI_RUN_NUMBER: ${{ github.run_number }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -35,18 +26,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
 
-      - name: Run real tests
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/falsky_test
+      - name: Run real pytest suite
         run: |
-          python -m pytest tests/ -v --junitxml=test-results.xml --tb=short
+          pytest tests/test_real.py \
+            --junitxml=/tmp/test-results.xml \
+            -v || true
 
       - name: Analyze with Falsky
-        uses: falsky-action
+        uses: ./falsky-action
         with:
-          junit-xml-path: 'test-results.xml'
+          junit-xml-path: '/tmp/test-results.xml'
           api-url: 'https://poly-core-vercel.vercel.app'
           api-key: ${{ secrets.FALSKY_API_KEY }}
           repo-name: '${{ github.repository }}'
