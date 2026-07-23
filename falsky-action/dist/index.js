@@ -34607,10 +34607,10 @@ function parseJUnitXML(xmlContent) {
   if (doc.testcase) cases.push(...toArray(doc.testcase));
 
   for (const tc of cases) {
-    const attrs = tc['@_'] || {};
-    const name = attrs.name || 'unknown';
-    const classname = attrs.classname || '';
-    const duration = attrs.time !== undefined ? parseFloat(attrs.time) : 0;
+    const attrs = tc['@_'] || tc;
+    const name = attrs['@_name'] || 'unknown';
+    const classname = attrs['@_classname'] || '';
+    const duration = attrs['@_time'] !== undefined ? parseFloat(attrs['@_time']) : 0;
 
     let status = 'passed';
     let message = '';
@@ -34749,12 +34749,20 @@ async function run() {
     const commitSha = github.context.sha || 'unknown';
     const environment = process.env.ENVIRONMENT || 'ci';
 
+    // Build query params for /api/junit
+    const junitQuery = new URLSearchParams({
+      repo_name: repoName,
+      branch: branch,
+      commit_sha: commitSha,
+      environment: environment,
+    }).toString();
+
     // Send raw JUnit XML to the backend's robust parser (/api/junit)
     core.info(`📤 Sending to Falsky API...`);
 
     let result;
     try {
-      result = await httpRequest(`${apiUrl}/api/junit`, {
+      result = await httpRequest(`${apiUrl}/api/junit?${junitQuery}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/xml',
