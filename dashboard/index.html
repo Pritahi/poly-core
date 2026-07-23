@@ -3,248 +3,203 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Falsky — Dashboard</title>
+<title>FLK-01 · Poly Console — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 16'><polyline points='0,8 8,8 12,1 17,15 21,4 25,8 34,8' fill='none' stroke='%232563eb' stroke-width='2.4'/></svg>">
-<link rel="stylesheet" href="design-system.css">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void:#06090f;--deep:#0a0f1a;--panel:#0d1420;--panel2:#111927;
+  --border:#1c2a3a;--border2:#243447;
+  --orbit:#00d4ff;--orbit2:rgba(0,212,255,0.15);
+  --seismic:#ff6b2b;--seismic2:rgba(255,107,43,0.15);
+  --green:#00ff88;--green2:rgba(0,255,136,0.12);
+  --amber:#ffb000;--amber2:rgba(255,176,0,0.12);
+  --red:#ff3344;--red2:rgba(255,51,68,0.12);
+  --purple:#a855f7;
+  --text:#e2eaf5;--text2:#8ba3bf;--text3:#4a6380;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+  --r:4px;--r-sm:3px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{background:var(--void);color:var(--text);font-family:var(--sans);font-size:14px;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 4px);pointer-events:none;z-index:9999;}
+.app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:48px 1fr;min-height:100vh;}
+.topbar{grid-column:1/-1;background:var(--deep);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:14px;position:sticky;top:0;z-index:100;}
+.topbar-logo{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--orbit);text-transform:uppercase;}
+.orbit-icon{width:28px;height:28px;border:2px solid var(--orbit);border-radius:50%;position:relative;animation:spin 6s linear infinite;flex-shrink:0;}
+.orbit-icon::before{content:'';position:absolute;top:-5px;left:50%;width:8px;height:8px;background:var(--seismic);border-radius:50%;box-shadow:0 0 8px var(--seismic);transform:translateX(-50%);}
+@keyframes spin{to{transform:rotate(360deg)}}
+.topbar-sep{width:1px;height:24px;background:var(--border);flex-shrink:0;}
+.topbar-station{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--text3);text-transform:uppercase;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.status-chip{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);background:var(--green2);border:1px solid rgba(0,255,136,.2);padding:3px 10px;border-radius:var(--r-sm);}
+.status-chip::before{content:'';width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,136,.4)}50%{opacity:.6;box-shadow:0 0 0 4px rgba(0,255,136,0)}}
+.clock{font-family:var(--mono);font-size:12px;color:var(--text2);letter-spacing:.1em;}
+.sidebar{background:var(--deep);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:12px 0;overflow:hidden;}
+.sidebar-brand{padding:0 16px 14px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.sidebar-brand-name{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--orbit);text-transform:uppercase;}
+.sidebar-brand-sub{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--text3);text-transform:uppercase;margin-top:3px;}
+.sidebar-section{padding:12px 16px 4px;font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--text3);text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;margin:1px 8px;border-radius:var(--r);color:var(--text2);text-decoration:none;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;transition:all .15s;}
+.nav-item:hover{background:var(--panel2);color:var(--text);border-left:2px solid var(--orbit);padding-left:14px;}
+.nav-item.active{background:var(--orbit2);color:var(--orbit);border-left:2px solid var(--orbit);padding-left:14px;}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;}
+.sidebar-footer{margin-top:auto;padding:12px 16px 0;border-top:1px solid var(--border);font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.1em;line-height:1.8;}
+.main{padding:24px;max-width:1440px;overflow:auto;}
+.page-title{display:flex;align-items:center;gap:12px;margin-bottom:4px;}
+.page-title h1{font-family:var(--mono);font-size:18px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.page-title .tag{font-family:var(--mono);font-size:9px;letter-spacing:.15em;background:var(--seismic2);color:var(--seismic);border:1px solid rgba(255,107,43,.3);padding:2px 8px;text-transform:uppercase;}
+.page-subtitle{font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:.1em;margin-bottom:24px;text-transform:uppercase;}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);margin-bottom:24px;overflow:hidden;}
+.stat-card{background:var(--panel);padding:16px 20px;position:relative;transition:background .2s;}
+.stat-card:hover{background:var(--panel2);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat-card.c-orbit::before{background:var(--orbit)}.stat-card.c-green::before{background:var(--green)}.stat-card.c-seismic::before{background:var(--seismic)}.stat-card.c-amber::before{background:var(--amber)}
+.stat-label{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--text3);text-transform:uppercase;margin-bottom:8px;}
+.stat-value{font-family:var(--mono);font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1;}
+.stat-sub{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:6px;letter-spacing:.08em;text-transform:uppercase;}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);margin-bottom:20px;overflow:hidden;}
+.section-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--panel2);border-bottom:1px solid var(--border);}
+.section-title{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:8px;}
+.section-title::before{content:'§';color:var(--orbit);font-weight:700;}
+.section-badge{font-family:var(--mono);font-size:9px;letter-spacing:.15em;background:var(--deep);color:var(--text3);border:1px solid var(--border);padding:2px 8px;text-transform:uppercase;}
+.section-body{padding:0;}
+table{width:100%;border-collapse:collapse;}
+thead th{background:var(--deep);color:var(--text3);font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody tr{transition:background .15s;cursor:pointer;}
+tbody tr:hover{background:var(--panel2);}
+tbody td{padding:11px 14px;border-bottom:1px solid rgba(28,42,58,.6);font-size:13px;vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+.mono-cell{font-family:var(--mono);font-size:12px;color:var(--text2);}
+.test-name{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--text);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.trust-cell{display:flex;align-items:center;gap:8px;}
+.trust-bar-bg{width:60px;height:6px;background:rgba(0,0,0,.3);border:1px solid var(--border);overflow:hidden;flex-shrink:0;}
+.trust-bar-fill{height:100%;transition:width .4s ease;}
+.trust-val{font-family:var(--mono);font-size:12px;font-weight:600;min-width:32px;}
+.tag{display:inline-block;padding:2px 8px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border:1px solid;}
+.tag-passed{color:var(--green);border-color:rgba(0,255,136,.3);background:var(--green2)}.tag-failed{color:var(--red);border-color:rgba(255,51,68,.3);background:var(--red2)}.tag-skipped{color:var(--text3);border-color:var(--border)}
+.tag-timing{color:var(--seismic);border-color:rgba(255,107,43,.3);background:var(--seismic2)}.tag-shared{color:var(--purple);border-color:rgba(168,85,247,.3);background:rgba(168,85,247,.1)}.tag-order{color:var(--amber);border-color:rgba(255,176,0,.3);background:var(--amber2)}.tag-nondet{color:var(--orbit);border-color:rgba(0,212,255,.3);background:var(--orbit2)}
+.run-dots{display:flex;gap:3px;flex-wrap:wrap;max-width:120px;}
+.run-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.run-dot.passed{background:var(--green);box-shadow:0 0 4px var(--green)}.run-dot.failed{background:var(--red);box-shadow:0 0 4px var(--red)}.run-dot.skipped{background:var(--text3)}
+.run-status{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;}
+.run-status.ok{color:var(--green)}.run-status.fail{color:var(--red)}.run-status.error{color:var(--seismic)}
+.btn-view{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--orbit);background:var(--orbit2);border:1px solid rgba(0,212,255,.3);padding:4px 12px;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;text-decoration:none;}
+.btn-view:hover{background:rgba(0,212,255,.25);border-color:var(--orbit);}
+.dist-bar{display:flex;height:24px;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;margin:16px;}
+.dist-seg{height:100%;transition:width .8s cubic-bezier(.25,.46,.45,.94);}
+.dist-legend{display:flex;gap:20px;padding:10px 16px;flex-wrap:wrap;}
+.dist-legend-item{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text2);}
+.dist-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+.q-banner{background:var(--red2);border:1px solid rgba(255,51,68,.3);border-left:3px solid var(--red);padding:12px 16px;margin-bottom:20px;border-radius:var(--r);display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12px;color:var(--red);}
+.q-banner strong{color:var(--red);font-weight:600;} .q-banner a{margin-left:auto;color:var(--red);text-decoration:none;font-size:11px;letter-spacing:.1em;text-transform:uppercase;} .q-banner a:hover{text-decoration:underline;}
+.no-repo{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;text-align:center;}
+.no-repo-icon{width:80px;height:80px;border:2px solid var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text3);position:relative;}
+.no-repo-icon::before{content:'';position:absolute;inset:-8px;border:1px dashed var(--border);border-radius:50%;animation:spin 20s linear infinite;}
+.no-repo h2{font-family:var(--mono);font-size:16px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);}
+.no-repo p{font-family:var(--mono);font-size:12px;color:var(--text3);max-width:320px;}
+.controls{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.select-wrap{position:relative;}
+.repo-select{appearance:none;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:8px 32px 8px 12px;border-radius:var(--r);font-family:var(--mono);font-size:12px;letter-spacing:.06em;outline:none;cursor:pointer;min-width:200px;transition:border-color .15s;}
+.repo-select:focus{border-color:var(--orbit);}
+.select-wrap::after{content:'▾';position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;font-size:12px;}
+.search-input{flex:1;max-width:280px;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:var(--r);font-family:var(--mono);font-size:12px;outline:none;transition:border-color .15s;}
+.search-input::placeholder{color:var(--text3);letter-spacing:.06em;} .search-input:focus{border-color:var(--orbit);}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}} .fade-in{animation:fadeIn .3s ease;}
+@media(max-width:1100px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.app{grid-template-columns:56px 1fr;}.sidebar-brand-name,.nav-item span,.sidebar-section,.sidebar-footer,.topbar-station{display:none;}.nav-item{justify-content:center;padding:12px;margin:1px 4px;}.stats-row{grid-template-columns:1fr 1fr;}.main{padding:16px;}}
+@media(max-width:500px){.stats-row{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <div class="app">
-
-<!-- Sidebar -->
-<aside class="sidebar">
-  <a href="/dashboard/" class="logo">
-    <svg width="28" height="13" viewBox="0 0 34 16" fill="none"><polyline points="0,8 8,8 12,1 17,15 21,4 25,8 34,8" stroke="var(--primary)" stroke-width="2.4"/></svg>
-    FALS<em>KY</em>
-  </a>
-  <nav>
-    <a href="/dashboard/" class="active">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      <span>Dashboard</span>
+  <header class="topbar">
+    <div class="topbar-logo"><div class="orbit-icon"></div><span>FLK-01</span></div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-station">Tremor Station · Poly Console v2.0</div>
+    <div class="topbar-right">
+      <div class="status-chip">SYSTEMS NOMINAL</div>
+      <div class="clock" id="clock">--:--:--</div>
+    </div>
+  </header>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-name">Poly Console</div>
+      <div class="sidebar-brand-sub">Seismic Mode · Active</div>
+    </div>
+    <div class="sidebar-section">Telemetry</div>
+    <a href="/dashboard/" class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg><span>Dashboard</span>
     </a>
-    <a href="/dashboard/repos.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-      <span>Repositories</span>
+    <a href="/dashboard/guide.html" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Protocol</span>
     </a>
-    <a href="/dashboard/api-keys.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L9 11"/></svg>
-      <span>API Keys</span>
+    <a href="/admin/" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Admin</span>
     </a>
-    <a href="/dashboard/settings.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-      <span>Settings</span>
-    </a>
-  </nav>
-  <div class="user-section">
-    <div class="user-info" id="userInfo">
-      <img id="userAvatar" src="" alt="">
-      <div>
-        <div class="name" id="userName">Loading…</div>
-        <div class="email" id="userEmail"></div>
+    <a href="/" class="nav-item" style="margin-top:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg><span>Exit</span></a>
+    <div class="sidebar-footer">FLK-01 · BUILD 2026.07<br><span style="color:var(--green)">SESSION: ACTIVE</span></div>
+  </aside>
+  <main class="main">
+    <div id="noRepo" class="no-repo" style="display:none">
+      <div class="no-repo-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+      <h2>Awaiting Telemetry Feed</h2>
+      <p>Select a repository from the control panel to initialize seismic monitoring.</p>
+    </div>
+    <div id="dashContent" style="display:none">
+      <div class="q-banner" id="qBanner" style="display:none">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span><strong>QUARANTINE ALERT:</strong> <span id="qCount">0</span> test(s) sub-threshold — isolated from active circuit</span>
+        <a href="#flaky">Review →</a>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card c-orbit"><div class="stat-label">Total Circuit Tests</div><div class="stat-value" id="sTotal">—</div><div class="stat-sub">under surveillance</div></div>
+        <div class="stat-card c-green"><div class="stat-label">Circuit Integrity</div><div class="stat-value" id="sTrust">—</div><div class="stat-sub">avg trust index</div></div>
+        <div class="stat-card c-seismic"><div class="stat-label">Seismic Anomalies</div><div class="stat-value" id="sFlaky">—</div><div class="stat-sub">flaky · flagged</div></div>
+        <div class="stat-card c-amber"><div class="stat-label">Trial Logs</div><div class="stat-value" id="sRuns">—</div><div class="stat-sub">CI sessions recorded</div></div>
+      </div>
+      <div class="section">
+        <div class="section-header"><div class="section-title">Trust Index Distribution</div><div class="section-badge">EXHIBIT-A</div></div>
+        <div class="dist-bar" id="distBar"><div class="dist-seg" style="width:0%;background:var(--green)"></div><div class="dist-seg" style="width:0%;background:var(--amber)"></div><div class="dist-seg" style="width:0%;background:var(--seismic)"></div><div class="dist-seg" style="width:0%;background:var(--red)"></div></div>
+        <div class="dist-legend"><div class="dist-legend-item"><div class="dist-dot" style="background:var(--green)"></div><span id="legHigh">High (90+) — 0</span></div><div class="dist-legend-item"><div class="dist-dot" style="background:var(--amber)"></div><span id="legMed">Med (70-89) — 0</span></div><div class="dist-legend-item"><div class="dist-dot" style="background:var(--seismic)"></div><span id="legLow">Low (50-69) — 0</span></div><div class="dist-legend-item"><div class="dist-dot" style="background:var(--red)"></div><span id="legCrit">Critical (<50) — 0</span></div></div>
+      </div>
+      <div class="section" id="flaky">
+        <div class="section-header"><div class="section-title">Flagged Anomalies · Flaky Circuit Breakers</div><div class="section-badge" id="flakyCount">DOCKET</div></div>
+        <div class="section-body">
+          <table><thead><tr><th>Test ID</th><th>Trust Index</th><th>Pass Rate</th><th>Anomaly Class</th><th>Last 10 Pulses</th><th>Action</th></tr></thead><tbody id="flakyBody"></tbody></table>
+          <div class="empty-state" id="flakyEmpty" style="display:none">No anomalies detected · All circuits nominal</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-header"><div class="section-title">Trial Log · Recent CI Sessions</div><div class="section-badge">LOG</div></div>
+        <div class="section-body">
+          <table><thead><tr><th>Session ID</th><th>Branch</th><th>Total</th><th>Passed</th><th>Status</th><th>Trust Index</th><th>Timestamp</th></tr></thead><tbody id="runsBody"></tbody></table>
+          <div class="empty-state" id="runsEmpty" style="display:none">No trial logs recorded — station on standby</div>
+        </div>
       </div>
     </div>
-    <a href="#" onclick="doLogout()" style="display:block;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text-muted);text-decoration:none">Sign Out →</a>
-  </div>
-</aside>
-
-<!-- Main -->
-<main class="main">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Dashboard</h1>
-      <p class="page-sub">Overview of your test reliability</p>
-    </div>
-    <a href="/dashboard/repos.html" class="btn btn-primary btn-sm">+ Add Repository</a>
-  </div>
-
-  <!-- Stats -->
-  <div class="stats-grid" id="statsGrid">
-    <div class="stat-card">
-      <div class="label">Connected Repos</div>
-      <div class="value" id="statRepos">—</div>
-      <div class="sub">repositories</div>
-    </div>
-    <div class="stat-card green">
-      <div class="label">Overall Trust Score</div>
-      <div class="value" id="statTrust">—</div>
-      <div class="sub">across all tests</div>
-    </div>
-    <div class="stat-card amber">
-      <div class="label">Flaky Tests</div>
-      <div class="value" id="statFlaky">—</div>
-      <div class="sub">detected</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Latest Analysis</div>
-      <div class="value" id="statLatest" style="font-size:1.2rem">—</div>
-      <div class="sub" id="statLatestSub">—</div>
-    </div>
-  </div>
-
-  <!-- Last synced -->
-  <div style="text-align:right;margin-bottom:12px;font-family:var(--mono);font-size:11px;color:var(--text-muted)" id="lastSync">—</div>
-
-  <!-- Empty state: no repos -->
-  <div id="emptyState" style="display:none" class="card">
-    <div class="empty" style="padding:48px">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin-bottom:16px;opacity:.3"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-      <h3>Connect your first repository</h3>
-      <p style="max-width:400px;margin:12px auto 20px">Install the Falsky GitHub App or add the Action to your workflow. Push code and results will appear here automatically.</p>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <a href="https://github.com/marketplace/actions/falsky-ai-flaky-test-detector" target="_blank" class="btn btn-primary">Install GitHub App</a>
-        <a href="/dashboard/repos.html" class="btn btn-ghost">View Setup Guide</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Connected Repos -->
-  <div class="card" id="reposCard" style="display:none;margin-bottom:24px">
-    <div class="card-header">
-      <span class="card-title">Connected Repositories</span>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Repository</th>
-            <th>Tests</th>
-            <th>Trust Score</th>
-            <th>Flaky</th>
-            <th>Last Run</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="reposTable"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Recent Activity -->
-  <div class="card" id="activityCard" style="display:none">
-    <div class="card-header">
-      <span class="card-title">Recent Test Runs</span>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Repository</th>
-            <th>Run ID</th>
-            <th>Commit</th>
-            <th>Tests</th>
-            <th>Trust</th>
-            <th>Time</th>
-          </tr>
-        </thead>
-        <tbody id="activityTable"></tbody>
-      </table>
-    </div>
-  </div>
-</main>
-
+  </main>
 </div>
-
 <script>
-const API = '';
-
-// Auth check
-(async () => {
-  try {
-    const res = await fetch(API + '/api/user/me');
-    // if (!res.ok) { window.location.href = '/login'; return; }
-    const user = await res.json();
-    document.getElementById('userName').textContent = user.name || user.email;
-    document.getElementById('userEmail').textContent = user.email;
-    if (user.avatar) document.getElementById('userAvatar').src = user.avatar;
-    loadDashboard();
-  } catch(e) { /* window.location.href = '/login'; */ }
-})();
-
-let lastSyncTime = null;
-
-async function loadDashboard() {
-  try {
-    // Load repos
-    const reposRes = await fetch(API + '/api/repos');
-    const reposData = await reposRes.json();
-    const repos = reposData.repos || [];
-    document.getElementById('statRepos').textContent = repos.length;
-    lastSyncTime = new Date();
-    updateSyncIndicator();
-
-    if (repos.length === 0) {
-      document.getElementById('emptyState').style.display = 'block';
-      document.getElementById('reposCard').style.display = 'none';
-      document.getElementById('activityCard').style.display = 'none';
-      return;
-    }
-
-    document.getElementById('emptyState').style.display = 'none';
-    document.getElementById('reposCard').style.display = 'block';
-    document.getElementById('activityCard').style.display = 'block';
-
-    // Load dashboard for each repo
-    let totalTests = 0, totalFlaky = 0, totalFailed = 0, totalTrust = 0, trustCount = 0;
-    let repoRows = '';
-
-    for (const repo of repos) {
-      try {
-        const dashRes = await fetch(API + '/api/dashboard?repo_name=' + encodeURIComponent(repo.name));
-        const dash = await dashRes.json();
-        const tests = dash.tests || [];
-        totalTests += tests.length;
-        totalFlaky += tests.filter(t => t.trust_score < 50).length;
-        totalFailed += tests.filter(t => t.pass_rate < 0.5).length;
-        tests.forEach(t => { totalTrust += t.trust_score; trustCount++; });
-
-        const avgTrust = tests.length > 0 ? Math.round(tests.reduce((s,t) => s + t.trust_score, 0) / tests.length) : 100;
-        const flaky = tests.filter(t => t.trust_score < 50).length;
-        const trustClass = avgTrust >= 80 ? 'high' : avgTrust >= 50 ? 'mid' : 'low';
-
-        repoRows += `<tr>
-          <td><a href="/dashboard/repo.html?repo=${encodeURIComponent(repo.name)}" style="color:var(--text);text-decoration:none;font-weight:600">${repo.name}</a></td>
-          <td>${tests.length}</td>
-          <td><span class="trust-badge ${trustClass}">${avgTrust}</span></td>
-          <td>${flaky > 0 ? '<span style="color:var(--amber)">'+flaky+'</span>' : '<span style="color:var(--green)">0</span>'}</td>
-          <td style="color:var(--text-muted)">—</td>
-          <td><a href="/dashboard/repo.html?repo=${encodeURIComponent(repo.name)}" class="btn btn-ghost btn-sm">View →</a></td>
-        </tr>`;
-      } catch(e) {}
-    }
-
-    document.getElementById('reposTable').innerHTML = repoRows || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">No data</td></tr>';
-    document.getElementById('statTrust').textContent = trustCount > 0 ? Math.round(totalTrust / trustCount) : '—';
-    document.getElementById('statFlaky').textContent = totalFlaky;
-    document.getElementById('statLatest').textContent = repos.length > 0 ? '✅ Active' : '—';
-    document.getElementById('statLatestSub').textContent = repos.length > 0 ? 'receiving data' : 'no repos yet';
-    document.getElementById('activityTable').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">Connect a repo to see runs</td></tr>';
-  } catch(e) {
-    console.error('Dashboard error:', e);
-  }
-}
-
-function updateSyncIndicator() {
-  if (!lastSyncTime) return;
-  const sec = Math.floor((Date.now() - lastSyncTime.getTime()) / 1000);
-  const text = sec < 60 ? `${sec}s ago` : `${Math.floor(sec/60)}m ago`;
-  document.getElementById('lastSync').textContent = `Last synced ${text}`;
-}
-
-// Auto-refresh every 30s
-setInterval(() => { loadDashboard(); }, 30000);
-setInterval(() => { updateSyncIndicator(); }, 5000);
-enableMobileCards();
-
-function enableMobileCards() {
-  const isMobile = window.innerWidth <= 768;
-  document.querySelectorAll('.table-wrap').forEach(wrap => {
-    if (isMobile) wrap.classList.add('mobile-cards');
-    else wrap.classList.remove('mobile-cards');
-  });
-}
-window.addEventListener('resize', enableMobileCards);
+const API=window.location.origin;let currentRepo=localStorage.getItem('poly_repo')||'';let allFlaky=[];let searchFilter='';const $=id=>document.getElementById(id);
+function tick(){const n=new Date();$('clock').textContent=[n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':')}setInterval(tick,1000);tick();
+function tc(s){if(s>=90)return'var(--green)';if(s>=70)return'var(--amber)';if(s>=50)return'var(--seismic)';return'var(--red)'}
+function catTag(c){const m={timing:'tag-timing',shared_state:'tag-shared',order_dependency:'tag-order',non_deterministic_data:'tag-nondet'};const l={timing:'Timing',shared_state:'Shared State',order_dependency:'Order Dep.',non_deterministic_data:'Non-Det.'};if(!c)return'<span style="color:var(--text3)">—</span>';return`<span class="tag ${m[c]||'tag-timing'}">${l[c]||c}</span>`}
+function fmtTime(ts){if(!ts)return'—';const d=new Date(ts),now=new Date(),diff=now-d;if(diff<60000)return'just now';if(diff<3600000)return Math.floor(diff/60000)+'m ago';if(diff<86400000)return Math.floor(diff/3600000)+'h ago';return d.toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}
+$('repoSelect').addEventListener('change',e=>{currentRepo=e.target.value;localStorage.setItem('poly_repo',currentRepo);loadDashboard()});
+$('searchInput').addEventListener('input',e=>{searchFilter=e.target.value.toLowerCase();renderFlaky()});
+async function loadRepos(){try{const r=await fetch(`${API}/api/repos`);const data=await r.json();const sel=$('repoSelect');sel.innerHTML='<option value="">— SELECT REPOSITORY —</option>';(data.repos||[]).forEach(r=>{const o=document.createElement('option');o.value=r.name;o.textContent=r.name;if(r.name===currentRepo)o.selected=true;sel.appendChild(o)});if(currentRepo)loadDashboard()}catch(e){console.error(e)}}
+async function loadDashboard(){if(!currentRepo){$('noRepo').style.display='flex';$('dashContent').style.display='none';return}$('noRepo').style.display='none';$('dashContent').style.display='block';try{const r=await fetch(`${API}/api/dashboard?repo_name=${encodeURIComponent(currentRepo)}&threshold=30`);const data=await r.json();renderStats(data.stats||{});renderDist(data.trust_distribution||{});allFlaky=data.flaky_tests||data.tests?.filter(t=>(t.trust_score||0)<70)||[];renderFlaky();renderRuns(data.recent_runs||data.runs||[]);loadQuarantine()}catch(e){console.error(e)}}
+function renderStats(s){const total=s.total||s.total_tests||0,trust=s.avg_trust?Math.round(s.avg_trust):0,flaky=allFlaky.length,runs=s.total_runs||0;$('sTotal').textContent=total;$('sTrust').textContent=trust+'%';$('sTrust').style.color=tc(trust);$('sFlaky').textContent=flaky;$('sRuns').textContent=runs}
+function renderDist(d){const h=d.high||0,m=d.medium||0,l=d.low||0,c=d.critical||0,t=h+m+l+c;const bar=$('distBar');bar.innerHTML=`<div class="dist-seg" style="width:${t?(h/t*100):0}%;background:var(--green)"></div><div class="dist-seg" style="width:${t?(m/t*100):0}%;background:var(--amber)"></div><div class="dist-seg" style="width:${t?(l/t*100):0}%;background:var(--seismic)"></div><div class="dist-seg" style="width:${t?(c/t*100):0}%;background:var(--red)"></div>`;$('legHigh').textContent=`High (90+) — ${h}`;$('legMed').textContent=`Med (70-89) — ${m}`;$('legLow').textContent=`Low (50-69) — ${l}`;$('legCrit').textContent=`Critical (<50) — ${c}`}
+function renderFlaky(){const list=searchFilter?allFlaky.filter(t=>(t.test_name||'').toLowerCase().includes(searchFilter)):allFlaky;const body=$('flakyBody'),empty=$('flakyEmpty');if(!list.length){body.innerHTML='';empty.style.display='block';return}empty.style.display='none';$('flakyCount').textContent=list.length+' FLAGGED';body.innerHTML=list.map(t=>{const s=Math.round(t.trust_score||0),pr=t.pass_rate!=null?Math.round(t.pass_rate*100)+'%':'—',dots=(t.recent_results||[]).slice(0,10).map(r=>`<div class="run-dot ${r.status}"></div>`).join(''),tn=encodeURIComponent(t.test_name);return`<tr onclick="location.href='test-detail.html?repo_name=${encodeURIComponent(currentRepo)}&test_name=${tn}'"><td class="test-name" title="${t.test_name}">${t.test_name}</td><td><div class="trust-cell"><div class="trust-bar-bg"><div class="trust-bar-fill" style="width:${s}%;background:${tc(s)}"></div></div><span class="trust-val" style="color:${tc(s)}">${s}</span></div></td><td class="mono-cell">${pr}</td><td>${catTag(t.flaky_category)}</td><td><div class="run-dots">${dots||'<span style="color:var(--text3)">—</span>'}</div></td><td><a href="test-detail.html?repo_name=${encodeURIComponent(currentRepo)}&test_name=${tn}" class="btn-view" onclick="event.stopPropagation()">Review</a></td></tr>`}).join('')}
+function renderRuns(runs){const body=$('runsBody'),empty=$('runsEmpty');if(!runs.length){body.innerHTML='';empty.style.display='block';return}empty.style.display='none';body.innerHTML=runs.map(r=>{const ok=!(r.failed||0),st=ok?'<span class="run-status ok">● All Passed</span>':(r.status==='error'?'<span class="run-status error">◆ Error</span>':`<span class="run-status fail">◆ ${r.failed||0} Failed</span>`),avg=Math.round(r.avg_trust_score||0),rid=r.run_id||'';return`<tr><td class="mono-cell" title="${rid}">${rid.length>28?rid.slice(0,28)+'…':rid}</td><td><span style="font-family:var(--mono);font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text2)">${r.branch||'—'}</span></td><td class="mono-cell">${r.total_tests||0}</td><td class="mono-cell" style="color:var(--green)">${r.passed||0}</td><td>${st}</td><td style="color:${tc(avg)};font-weight:600;font-family:var(--mono);font-size:13px">${avg}%</td><td class="mono-cell" style="color:var(--text3)">${fmtTime(r.timestamp)}</td></tr>`}).join('')}
+async function loadQuarantine(){try{const r=await fetch(`${API}/api/quarantined?repo_name=${encodeURIComponent(currentRepo)}`);const data=await r.json();if(data.quarantined&&data.quarantined.length){$('qBanner').style.display='flex';$('qCount').textContent=data.quarantined.length}else{$('qBanner').style.display='none'}}catch(e){$('qBanner').style.display='none'}}
+const urlRepo=new URLSearchParams(window.location.search).get('repo');if(urlRepo&&!currentRepo){currentRepo=urlRepo;localStorage.setItem('poly_repo',currentRepo)}
+loadRepos();setInterval(()=>{if(currentRepo)loadDashboard()},30000);
 </script>
 </body>
 </html>
