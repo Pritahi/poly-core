@@ -87,12 +87,29 @@ app.add_middleware(SecurityHeadersMiddleware)
 # Robust base_path: works in Vercel serverless and local dev
 _base = os.path.dirname(os.path.abspath(__file__))  # backend/
 base_path = os.path.dirname(_base)  # project root
-# Vercel fallback: if dashboard/ not found at base_path, try /var/task
+
+# Debug: log all candidate paths
+logger.info(f"_base={_base}, initial base_path={base_path}")
+for candidate in [base_path, "/var/task", _base, os.path.join("/var/task", "backend")]:
+    dash_path = os.path.join(candidate, "dashboard")
+    land_path = os.path.join(candidate, "landing")
+    logger.info(f"  Checking {candidate}: dashboard={os.path.isdir(dash_path)}, landing={os.path.isdir(land_path)}")
+
+# Vercel fallback: try multiple locations for dashboard folder
 if not os.path.isdir(os.path.join(base_path, "dashboard")):
+    # Try /var/task (Vercel serverless root)
     if os.path.isdir(os.path.join("/var/task", "dashboard")):
         base_path = "/var/task"
+    # Try /var/task/backend (if files are alongside api.py)
+    elif os.path.isdir(os.path.join("/var/task", "backend", "dashboard")):
+        base_path = os.path.join("/var/task", "backend")
+    # Try same directory as api.py
     elif os.path.isdir(os.path.join(_base, "dashboard")):
-        base_path = _base  # dashboard is inside backend/
+        base_path = _base
+    else:
+        logger.error(f"dashboard/ folder not found at any candidate path! Files will not be served.")
+
+logger.info(f"Final base_path={base_path}")
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
