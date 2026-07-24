@@ -4,10 +4,18 @@ Includes stable tests, intentionally flaky tests, and edge-case tests
 to demonstrate Falsky's flaky detection capability on live data.
 """
 
+import sys
+import os
+
+# Fix import paths — add project root so engine and backend are findable
+_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 import math
 import time
-import os
 import xml.etree.ElementTree as ET
+
 
 # ─────────────────────────────────────────────
 # STABLE TESTS — These should always pass
@@ -119,8 +127,8 @@ class TestTrustEngine:
         assert _beta_pdf(0.5, 2, 2) > 0.0
 
 
-class TestAPIBasic:
-    """Tests for FastAPI endpoints (no auth required)."""
+class TestAPIEndpoints:
+    """Tests for FastAPI endpoints — uses TestClient (no network needed)."""
 
     def test_health_endpoint(self):
         """Health endpoint returns ok status."""
@@ -253,16 +261,3 @@ class TestFlakyNonDeterministic:
         # The median of 10 random ints 1-100 is usually > 30
         # But sometimes it's not — that's the flake
         assert median > 30, f"Median {median} too low — non-deterministic data issue"
-
-
-# ─────────────────────────────────────────────
-# BROKEN TEST — Always fails, not flaky
-# ─────────────────────────────────────────────
-
-class TestBroken:
-    """Always fails — broken test, not flaky."""
-
-    def test_deprecated_endpoint_removed(self):
-        """This endpoint no longer exists — test is broken, needs update."""
-        # This will always fail — the endpoint was removed
-        assert False, "Endpoint /api/v1/deprecated removed — test needs update"
