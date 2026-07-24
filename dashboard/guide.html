@@ -52,6 +52,10 @@
     </div>
     <a href="#" onclick="doLogout()" style="display:block;margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.1em;text-decoration:none">SIGN OUT →</a>
   </div>
+  <div class="theme-toggle">
+    <button onclick="setTheme('dark')" id="btnDark">🌙 DARK</button>
+    <button onclick="setTheme('light')" id="btnLight">☀️ LIGHT</button>
+  </div>
 </aside>
 
 <!-- Main -->
@@ -295,6 +299,21 @@
 </div>
 
 <script>
+// Theme toggle
+const savedTheme = localStorage.getItem('falsky-theme') || 'dark';
+document.documentElement.className = savedTheme === 'light' ? 'light' : '';
+function setTheme(t) {
+  localStorage.setItem('falsky-theme', t);
+  document.documentElement.className = t === 'light' ? 'light' : '';
+  document.getElementById('btnDark')?.classList.toggle('active', t === 'dark');
+  document.getElementById('btnLight')?.classList.toggle('active', t === 'light');
+}
+// Init toggle active state on page load
+setTimeout(() => {
+  document.getElementById('btnDark')?.classList.toggle('active', savedTheme === 'dark');
+  document.getElementById('btnLight')?.classList.toggle('active', savedTheme === 'light');
+}, 0);
+
 const API = '';
 
 // Auth check

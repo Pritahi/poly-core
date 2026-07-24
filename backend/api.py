@@ -1219,6 +1219,7 @@ def serve_repo(request: Request):
     return _serve_html(os.path.join("dashboard", "repo.html"), "Repository")
 
 @app.get("/dashboard/test-detail.html", response_class=HTMLResponse)
+@app.get("/dashboard/test.html", response_class=HTMLResponse)
 def serve_test_detail(request: Request):
     if not _check_user_auth(request):
         return RedirectResponse(url="/login", status_code=302)

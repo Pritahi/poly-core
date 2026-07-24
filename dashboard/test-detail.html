@@ -58,6 +58,10 @@
       </div>
     </div>
   </div>
+  <div class="theme-toggle">
+    <button onclick="setTheme('dark')" id="btnDark">🌙 DARK</button>
+    <button onclick="setTheme('light')" id="btnLight">☀️ LIGHT</button>
+  </div>
 </aside>
 
 <!-- Main -->
@@ -156,6 +160,21 @@
 </div>
 
 <script>
+// Theme toggle
+const savedTheme = localStorage.getItem('falsky-theme') || 'dark';
+document.documentElement.className = savedTheme === 'light' ? 'light' : '';
+function setTheme(t) {
+  localStorage.setItem('falsky-theme', t);
+  document.documentElement.className = t === 'light' ? 'light' : '';
+  document.getElementById('btnDark')?.classList.toggle('active', t === 'dark');
+  document.getElementById('btnLight')?.classList.toggle('active', t === 'light');
+}
+// Init toggle active state on page load
+setTimeout(() => {
+  document.getElementById('btnDark')?.classList.toggle('active', savedTheme === 'dark');
+  document.getElementById('btnLight')?.classList.toggle('active', savedTheme === 'light');
+}, 0);
+
 const API = '';
 const catNames = {timing:'⏱️ Timing Flakiness',order_dependency:'🔗 Order Dependency',shared_state:'🤝 Shared State Contamination',non_deterministic_data:'🎲 Non-Deterministic Data',environment_specific:'🌐 Environment Specific'};
 const catClasses = {timing:'timing',order_dependency:'order',shared_state:'shared',non_deterministic_data:'random',environment_specific:'env'};
